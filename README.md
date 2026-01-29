@@ -102,9 +102,9 @@ In NVC, the **giraffe** (with its long neck for perspective and big heart) repre
 
 ## Contact
 
-- **Support:** support@giraffespace.app
-- **Feedback:** feedback@giraffespace.app
-- **Privacy:** privacy@giraffespace.app
+- **Support:** giraffespaceapp@gmail.com
+- **Feedback:** giraffespaceapp@gmail.com
+- **Privacy:** giraffespaceapp@gmail.com
 
 ---
 
