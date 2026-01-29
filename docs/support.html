@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support - Giraffe Space</title>
+    <meta name="description" content="Get help with Giraffe Space, the NVC learning app. Contact support, browse FAQs, and find answers to common questions.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --giraffe-orange: #E8A838;
+            --giraffe-dark: #D4922A;
+            --sage-green: #7CB77C;
+            --cream: #FFF8E7;
+            --cream-dark: #FFEFD5;
+            --text-dark: #2D2D2D;
+            --text-muted: #6B6B6B;
+            --white: #FFFFFF;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            --shadow-hover: 0 8px 30px rgba(0, 0, 0, 0.12);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(180deg, var(--cream) 0%, var(--cream-dark) 100%);
+            color: var(--text-dark);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 40px 24px 60px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            text-decoration: none;
+        }
+
+        .logo-icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, var(--giraffe-orange) 0%, var(--giraffe-dark) 100%);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            box-shadow: var(--shadow);
+        }
+
+        .logo-text {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--text-dark);
+        }
+
+        .header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            font-size: 17px;
+            color: var(--text-muted);
+        }
+
+        /* Cards */
+        .card {
+            background: var(--white);
+            border-radius: 20px;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow);
+        }
+
+        .card h2 {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .card h2 .icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--cream) 0%, var(--cream-dark) 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        /* Contact Section */
+        .contact-box {
+            background: linear-gradient(135deg, var(--cream) 0%, var(--cream-dark) 100%);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .contact-box p {
+            color: var(--text-muted);
+            margin-bottom: 16px;
+            font-size: 15px;
+        }
+
+        .email-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, var(--giraffe-orange) 0%, var(--giraffe-dark) 100%);
+            color: var(--white);
+            padding: 14px 28px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 16px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .email-link:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .response-time {
+            margin-top: 16px;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        /* FAQ Section */
+        .faq-item {
+            border-bottom: 1px solid #F0F0F0;
+            padding: 20px 0;
+        }
+
+        .faq-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .faq-item:first-child {
+            padding-top: 0;
+        }
+
+        .faq-question {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 10px;
+            cursor: default;
+        }
+
+        .faq-answer {
+            font-size: 15px;
+            color: var(--text-muted);
+            line-height: 1.7;
+        }
+
+        /* Features Grid */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .feature-item {
+            background: linear-gradient(135deg, var(--cream) 0%, var(--cream-dark) 100%);
+            border-radius: 14px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .feature-icon {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .feature-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        /* Requirements List */
+        .requirements-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .requirement-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 18px;
+            background: linear-gradient(135deg, var(--cream) 0%, var(--cream-dark) 100%);
+            border-radius: 12px;
+        }
+
+        .requirement-item .check {
+            width: 24px;
+            height: 24px;
+            background: var(--sage-green);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .requirement-item span {
+            font-size: 15px;
+            color: var(--text-dark);
+        }
+
+        /* Links Section */
+        .links-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .link-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 18px;
+            background: linear-gradient(135deg, var(--cream) 0%, var(--cream-dark) 100%);
+            border-radius: 14px;
+            text-decoration: none;
+            color: var(--text-dark);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .link-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .link-card .link-icon {
+            font-size: 20px;
+        }
+
+        .link-card .link-text {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 40px 24px;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .footer p {
+            margin-bottom: 8px;
+        }
+
+        .footer a {
+            color: var(--giraffe-dark);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .container {
+                padding: 24px 16px 40px;
+            }
+
+            .header h1 {
+                font-size: 26px;
+            }
+
+            .card {
+                padding: 24px;
+                border-radius: 16px;
+            }
+
+            .card h2 {
+                font-size: 19px;
+            }
+
+            .features-grid,
+            .links-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .logo-text {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <a href="index.html" class="logo">
+                <div class="logo-icon">🦒</div>
+                <span class="logo-text">Giraffe Space</span>
+            </a>
+            <h1>Support Center</h1>
+            <p>We're here to help you on your NVC journey</p>
+        </header>
+
+        <!-- Contact Support -->
+        <section class="card">
+            <h2><span class="icon">💬</span> Contact Support</h2>
+            <div class="contact-box">
+                <p>Have a question or need assistance? Our support team is ready to help.</p>
+                <a href="mailto:support@giraffespace.app" class="email-link">
+                    ✉️ support@giraffespace.app
+                </a>
+                <p class="response-time">We typically respond within 24-48 hours</p>
+            </div>
+        </section>
+
+        <!-- App Features -->
+        <section class="card">
+            <h2><span class="icon">✨</span> What Giraffe Space Offers</h2>
+            <div class="features-grid">
+                <div class="feature-item">
+                    <div class="feature-icon">📚</div>
+                    <div class="feature-title">Interactive Lessons</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">🎯</div>
+                    <div class="feature-title">Daily Practice</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">📝</div>
+                    <div class="feature-title">Guided Journaling</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">🤖</div>
+                    <div class="feature-title">AI Chat Assistant</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FAQ Section -->
+        <section class="card">
+            <h2><span class="icon">❓</span> Frequently Asked Questions</h2>
+
+            <div class="faq-item">
+                <div class="faq-question">What is Nonviolent Communication (NVC)?</div>
+                <div class="faq-answer">NVC is a communication approach developed by Dr. Marshall Rosenberg that helps people express themselves honestly while empathetically receiving others. It focuses on observations, feelings, needs, and requests rather than judgments and demands.</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">How much does Giraffe Space cost?</div>
+                <div class="faq-answer">Giraffe Space offers a free tier with daily practice limits. Premium subscriptions are available at $4.99/month or $29.99/year (50% savings) for unlimited access to all features including unlimited AI chats, advanced exercises, and unlimited journaling.</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">How do I cancel my subscription?</div>
+                <div class="faq-answer">You can manage or cancel your subscription anytime through your device's App Store settings. Go to Settings > [Your Name] > Subscriptions on iOS, then select Giraffe Space to modify or cancel.</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">Is the AI chat a replacement for therapy?</div>
+                <div class="faq-answer">No. Gigi, our AI assistant, is designed to help you practice NVC concepts and process everyday situations. It is not a substitute for professional mental health care. If you're experiencing serious emotional difficulties, please consult a qualified mental health professional.</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">How do I restore my purchases on a new device?</div>
+                <div class="faq-answer">Open the app, go to Settings, and tap "Restore Purchases." Make sure you're signed into the same Apple ID used for the original purchase. Your subscription will be automatically restored.</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">Is Giraffe Space appropriate for all ages?</div>
+                <div class="faq-answer">Giraffe Space is designed for users 13 years and older. The app contains educational content about emotional awareness and communication that is suitable for teens and adults.</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">My app isn't working properly. What should I do?</div>
+                <div class="faq-answer">First, try closing and reopening the app. If the issue persists, check for app updates in the App Store. You can also try restarting your device. If problems continue, contact us at support@giraffespace.app with details about the issue.</div>
+            </div>
+        </section>
+
+        <!-- Technical Requirements -->
+        <section class="card">
+            <h2><span class="icon">📱</span> Technical Requirements</h2>
+            <div class="requirements-list">
+                <div class="requirement-item">
+                    <span class="check">✓</span>
+                    <span>iOS 13.0 or later</span>
+                </div>
+                <div class="requirement-item">
+                    <span class="check">✓</span>
+                    <span>Compatible with iPhone and iPad</span>
+                </div>
+                <div class="requirement-item">
+                    <span class="check">✓</span>
+                    <span>Approximately 100 MB storage space</span>
+                </div>
+                <div class="requirement-item">
+                    <span class="check">✓</span>
+                    <span>Internet connection for AI features</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Privacy & Data -->
+        <section class="card">
+            <h2><span class="icon">🔒</span> Privacy & Your Data</h2>
+            <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 15px; line-height: 1.7;">
+                Your privacy matters to us. We only collect data necessary to provide and improve our services. Your journal entries and chat conversations are stored securely and never shared with third parties for marketing purposes.
+            </p>
+            <div class="links-grid">
+                <a href="privacy.html" class="link-card">
+                    <span class="link-icon">📄</span>
+                    <span class="link-text">Privacy Policy</span>
+                </a>
+                <a href="terms.html" class="link-card">
+                    <span class="link-icon">📋</span>
+                    <span class="link-text">Terms of Service</span>
+                </a>
+            </div>
+        </section>
+
+        <!-- Feedback -->
+        <section class="card">
+            <h2><span class="icon">💡</span> Share Your Feedback</h2>
+            <p style="color: var(--text-muted); font-size: 15px; line-height: 1.7;">
+                We're constantly working to improve Giraffe Space. Your feedback helps us create a better experience for everyone learning NVC. Share your thoughts, feature requests, or suggestions with us.
+            </p>
+            <div style="margin-top: 20px;">
+                <a href="mailto:feedback@giraffespace.app" class="email-link" style="background: var(--sage-green);">
+                    💌 feedback@giraffespace.app
+                </a>
+            </div>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p><strong>Giraffe Space</strong></p>
+        <p>Learn to communicate with compassion</p>
+        <p style="margin-top: 16px;">
+            <a href="index.html">Home</a> ·
+            <a href="privacy.html">Privacy</a> ·
+            <a href="terms.html">Terms</a>
+        </p>
+        <p style="margin-top: 16px;">© 2026 Giraffe Space. All rights reserved.</p>
+    </footer>
+</body>
+</html>

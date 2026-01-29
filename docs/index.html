@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giraffe Space - Learn Nonviolent Communication</title>
+    <meta name="description" content="Master compassionate communication with Giraffe Space. Interactive lessons, daily practice, and AI-powered guidance to transform how you connect with others.">
+    <meta property="og:title" content="Giraffe Space - Learn Nonviolent Communication">
+    <meta property="og:description" content="Master compassionate communication with interactive lessons, daily practice, and AI guidance.">
+    <meta property="og:type" content="website">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --giraffe-orange: #E8A838;
+            --giraffe-dark: #D4922A;
+            --giraffe-light: #F5C563;
+            --sage-green: #7CB77C;
+            --sage-light: #A8D5A8;
+            --coral: #E8887C;
+            --cream: #FFF8E7;
+            --cream-dark: #FFEFD5;
+            --text-dark: #2D2D2D;
+            --text-muted: #6B6B6B;
+            --white: #FFFFFF;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.12);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: var(--text-dark);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(180deg, var(--cream) 0%, var(--cream-dark) 50%, var(--white) 100%);
+            padding: 60px 24px 80px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 30% 20%, rgba(232, 168, 56, 0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 80%, rgba(124, 183, 124, 0.1) 0%, transparent 50%);
+            z-index: 0;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 32px;
+        }
+
+        .logo-icon {
+            width: 72px;
+            height: 72px;
+            background: linear-gradient(135deg, var(--giraffe-orange) 0%, var(--giraffe-dark) 100%);
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .logo-text {
+            font-size: 36px;
+            font-weight: 900;
+            color: var(--text-dark);
+        }
+
+        .hero h1 {
+            font-size: 44px;
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 20px;
+            color: var(--text-dark);
+        }
+
+        .hero h1 span {
+            background: linear-gradient(135deg, var(--giraffe-orange) 0%, var(--giraffe-dark) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 19px;
+            color: var(--text-muted);
+            margin-bottom: 36px;
+            line-height: 1.7;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 16px 32px;
+            border-radius: 14px;
+            font-size: 17px;
+            font-weight: 700;
+            text-decoration: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--giraffe-orange) 0%, var(--giraffe-dark) 100%);
+            color: var(--white);
+            box-shadow: var(--shadow);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-secondary {
+            background: var(--white);
+            color: var(--text-dark);
+            border: 2px solid #E8E8E8;
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--giraffe-orange);
+            transform: translateY(-2px);
+        }
+
+        /* App Preview */
+        .app-preview {
+            margin-top: 60px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            perspective: 1000px;
+        }
+
+        .phone-frame {
+            width: 220px;
+            height: 440px;
+            background: linear-gradient(145deg, #1a1a1a 0%, #2d2d2d 100%);
+            border-radius: 36px;
+            padding: 12px;
+            box-shadow: var(--shadow-lg), inset 0 0 0 2px rgba(255,255,255,0.1);
+            transform: rotateY(-5deg);
+        }
+
+        .phone-frame:nth-child(2) {
+            transform: rotateY(5deg);
+        }
+
+        .phone-screen {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, var(--cream) 0%, var(--cream-dark) 100%);
+            border-radius: 26px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .phone-screen .emoji {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .phone-screen .title {
+            font-weight: 700;
+            font-size: 16px;
+            color: var(--text-dark);
+            margin-bottom: 8px;
+        }
+
+        .phone-screen .subtitle {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        /* Features Section */
+        .features {
+            padding: 80px 24px;
+            background: var(--white);
+        }
+
+        .section-header {
+            text-align: center;
+            max-width: 600px;
+            margin: 0 auto 60px;
+        }
+
+        .section-header h2 {
+            font-size: 36px;
+            font-weight: 800;
+            margin-bottom: 16px;
+            color: var(--text-dark);
+        }
+
+        .section-header p {
+            font-size: 18px;
+            color: var(--text-muted);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .feature-card {
+            background: var(--white);
+            border: 2px solid #F0F0F0;
+            border-radius: 20px;
+            padding: 32px;
+            transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow);
+            border-color: var(--giraffe-light);
+        }
+
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--cream) 0%, var(--cream-dark) 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            margin-bottom: 20px;
+        }
+
+        .feature-card h3 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: var(--text-dark);
+        }
+
+        .feature-card p {
+            font-size: 15px;
+            color: var(--text-muted);
+            line-height: 1.7;
+        }
+
+        /* How It Works */
+        .how-it-works {
+            padding: 80px 24px;
+            background: linear-gradient(180deg, var(--cream) 0%, var(--cream-dark) 100%);
+        }
+
+        .steps {
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .step {
+            display: flex;
+            gap: 24px;
+            align-items: flex-start;
+        }
+
+        .step-number {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--giraffe-orange) 0%, var(--giraffe-dark) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-size: 20px;
+            font-weight: 800;
+            flex-shrink: 0;
+        }
+
+        .step-content h3 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--text-dark);
+        }
+
+        .step-content p {
+            font-size: 15px;
+            color: var(--text-muted);
+            line-height: 1.7;
+        }
+
+        /* NVC Intro */
+        .nvc-intro {
+            padding: 80px 24px;
+            background: var(--white);
+        }
+
+        .nvc-card {
+            max-width: 800px;
+            margin: 0 auto;
+            background: linear-gradient(135deg, var(--cream) 0%, var(--cream-dark) 100%);
+            border-radius: 24px;
+            padding: 48px;
+            text-align: center;
+        }
+
+        .nvc-card .giraffe-icon {
+            font-size: 64px;
+            margin-bottom: 24px;
+        }
+
+        .nvc-card h3 {
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 16px;
+            color: var(--text-dark);
+        }
+
+        .nvc-card p {
+            font-size: 17px;
+            color: var(--text-muted);
+            line-height: 1.8;
+            max-width: 600px;
+            margin: 0 auto 32px;
+        }
+
+        .nvc-components {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+
+        .nvc-component {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 20px 16px;
+            box-shadow: var(--shadow);
+        }
+
+        .nvc-component .num {
+            width: 32px;
+            height: 32px;
+            background: var(--giraffe-orange);
+            border-radius: 50%;
+            color: var(--white);
+            font-weight: 800;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px;
+        }
+
+        .nvc-component .label {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        /* CTA Section */
+        .cta-section {
+            padding: 80px 24px;
+            background: linear-gradient(135deg, var(--giraffe-orange) 0%, var(--giraffe-dark) 100%);
+            text-align: center;
+        }
+
+        .cta-section h2 {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--white);
+            margin-bottom: 16px;
+        }
+
+        .cta-section p {
+            font-size: 18px;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 32px;
+        }
+
+        .cta-section .btn {
+            background: var(--white);
+            color: var(--giraffe-dark);
+        }
+
+        /* Footer */
+        .footer {
+            padding: 48px 24px;
+            background: var(--text-dark);
+            color: rgba(255,255,255,0.7);
+            text-align: center;
+        }
+
+        .footer-logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+
+        .footer-logo .icon {
+            font-size: 28px;
+        }
+
+        .footer-logo .text {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--white);
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 24px;
+            justify-content: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            font-size: 15px;
+            transition: color 0.2s;
+        }
+
+        .footer-links a:hover {
+            color: var(--white);
+        }
+
+        .footer p {
+            font-size: 14px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 32px;
+            }
+
+            .hero p {
+                font-size: 17px;
+            }
+
+            .app-preview {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .phone-frame {
+                transform: none !important;
+            }
+
+            .phone-frame:nth-child(2) {
+                display: none;
+            }
+
+            .nvc-components {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .section-header h2,
+            .cta-section h2 {
+                font-size: 28px;
+            }
+
+            .nvc-card {
+                padding: 32px 24px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .cta-buttons {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="logo">
+                <div class="logo-icon">🦒</div>
+                <span class="logo-text">Giraffe Space</span>
+            </div>
+            <h1>Learn to Communicate with <span>Compassion</span></h1>
+            <p>Master Nonviolent Communication through interactive lessons, daily practice, and AI-powered guidance. Transform how you connect with yourself and others.</p>
+            <div class="cta-buttons">
+                <a href="https://apps.apple.com/app/giraffe-space/id6758386322" class="btn btn-primary">
+                    <svg width="20" height="24" viewBox="0 0 20 24" fill="currentColor">
+                        <path d="M15.5 1.5c-1.5 0-3.2.9-4.2 2.1-.9 1.1-1.7 2.8-1.4 4.4 1.6.1 3.3-.8 4.3-2 .9-1.1 1.6-2.7 1.3-4.5zM19.8 17.8c-.5 1.1-1.1 2.1-1.9 3-.7.8-1.5 1.7-2.7 1.7-1.1 0-1.5-.7-2.8-.7-1.4 0-1.8.7-2.8.7-1.2 0-2-1-2.7-1.8-1.5-1.7-2.7-4.8-2.7-7.6 0-4.5 2.9-6.9 5.8-6.9 1.2 0 2.2.8 2.9.8.7 0 1.9-.8 3.3-.8.5 0 2.4.1 3.6 1.7-3 1.9-2.5 6.6.9 7.9z"/>
+                    </svg>
+                    Download on App Store
+                </a>
+                <a href="support.html" class="btn btn-secondary">
+                    Get Support
+                </a>
+            </div>
+        </div>
+
+        <div class="app-preview">
+            <div class="phone-frame">
+                <div class="phone-screen">
+                    <div class="emoji">🎯</div>
+                    <div class="title">Daily Practice</div>
+                    <div class="subtitle">5 exercises to build your NVC skills</div>
+                </div>
+            </div>
+            <div class="phone-frame">
+                <div class="phone-screen">
+                    <div class="emoji">🦒</div>
+                    <div class="title">Meet Gigi</div>
+                    <div class="subtitle">Your AI companion for NVC practice</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features">
+        <div class="section-header">
+            <h2>Everything You Need to Learn NVC</h2>
+            <p>A complete toolkit for transforming reactive communication into compassionate connection</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">📚</div>
+                <h3>Interactive Lessons</h3>
+                <p>Start with our 4-part introduction course covering observations, feelings, needs, and requests through engaging stories and quizzes.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎯</div>
+                <h3>Daily Practice</h3>
+                <p>Build lasting skills with Duolingo-style exercises. Spot judgments, identify feelings, and transform reactive thoughts into empathetic responses.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📝</div>
+                <h3>Guided Journaling</h3>
+                <p>Process real conflicts with structured templates. Transform difficult experiences into opportunities for growth and connection.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🤖</div>
+                <h3>AI Chat Assistant</h3>
+                <p>Meet Gigi, your personal NVC guide. Vent freely, get help transforming reactive thoughts, and practice responses to challenging situations.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔥</div>
+                <h3>Streak Tracking</h3>
+                <p>Stay motivated with daily streaks, XP rewards, and level progression. Celebrate your growth as you become more fluent in compassionate communication.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📖</div>
+                <h3>NVC Vocabulary</h3>
+                <p>Access a comprehensive reference of 160+ feelings and 50+ universal human needs. Know exactly what words to use when expressing yourself.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="how-it-works">
+        <div class="section-header">
+            <h2>Your Journey to Better Communication</h2>
+            <p>Start connecting more deeply in just a few minutes a day</p>
+        </div>
+        <div class="steps">
+            <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h3>Learn the Basics</h3>
+                    <p>Complete four interactive lessons introducing NVC concepts through stories, examples, and quizzes. Meet the giraffe (compassion) and jackal (reactivity) characters.</p>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h3>Practice Daily</h3>
+                    <p>Spend 5-10 minutes each day with engaging exercises. Identify judgments, distinguish real feelings from "faux feelings," and transform jackal thoughts into giraffe language.</p>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h3>Apply to Real Life</h3>
+                    <p>Use the journal to process actual conflicts and difficult conversations. Chat with Gigi when you need support navigating challenging situations.</p>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                    <h3>Transform Your Relationships</h3>
+                    <p>Watch as your daily practice naturally flows into more authentic, connected conversations with the people who matter most.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- NVC Introduction -->
+    <section class="nvc-intro">
+        <div class="nvc-card">
+            <div class="giraffe-icon">🦒</div>
+            <h3>What is Nonviolent Communication?</h3>
+            <p>Developed by Dr. Marshall Rosenberg, NVC is a way of communicating that leads to giving from the heart. It helps us connect with ourselves and others, and allows compassion to flourish. The giraffe—with its long neck for perspective and big heart—symbolizes this compassionate approach.</p>
+            <div class="nvc-components">
+                <div class="nvc-component">
+                    <div class="num">1</div>
+                    <div class="label">Observations</div>
+                </div>
+                <div class="nvc-component">
+                    <div class="num">2</div>
+                    <div class="label">Feelings</div>
+                </div>
+                <div class="nvc-component">
+                    <div class="num">3</div>
+                    <div class="label">Needs</div>
+                </div>
+                <div class="nvc-component">
+                    <div class="num">4</div>
+                    <div class="label">Requests</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <h2>Start Your NVC Journey Today</h2>
+        <p>Join thousands learning to communicate with more compassion</p>
+        <a href="https://apps.apple.com/app/giraffe-space/id6758386322" class="btn">
+            <svg width="20" height="24" viewBox="0 0 20 24" fill="currentColor">
+                <path d="M15.5 1.5c-1.5 0-3.2.9-4.2 2.1-.9 1.1-1.7 2.8-1.4 4.4 1.6.1 3.3-.8 4.3-2 .9-1.1 1.6-2.7 1.3-4.5zM19.8 17.8c-.5 1.1-1.1 2.1-1.9 3-.7.8-1.5 1.7-2.7 1.7-1.1 0-1.5-.7-2.8-.7-1.4 0-1.8.7-2.8.7-1.2 0-2-1-2.7-1.8-1.5-1.7-2.7-4.8-2.7-7.6 0-4.5 2.9-6.9 5.8-6.9 1.2 0 2.2.8 2.9.8.7 0 1.9-.8 3.3-.8.5 0 2.4.1 3.6 1.7-3 1.9-2.5 6.6.9 7.9z"/>
+            </svg>
+            Download Free on App Store
+        </a>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-logo">
+            <span class="icon">🦒</span>
+            <span class="text">Giraffe Space</span>
+        </div>
+        <div class="footer-links">
+            <a href="support.html">Support</a>
+            <a href="privacy.html">Privacy Policy</a>
+            <a href="terms.html">Terms of Service</a>
+            <a href="mailto:support@giraffespace.app">Contact</a>
+        </div>
+        <p>© 2026 Giraffe Space. All rights reserved.</p>
+        <p style="margin-top: 8px; font-size: 13px;">Based on the work of Dr. Marshall B. Rosenberg</p>
+    </footer>
+</body>
+</html>
