@@ -9,12 +9,15 @@ import { useState, useEffect } from 'react';
 import { getOfferings } from '@/lib/revenuecatClient';
 import { X, AlertCircle, Clock, RefreshCw } from 'lucide-react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
+import { useQueryClient } from '@tanstack/react-query';
+import { premiumKeys } from '@/lib/usePremium';
 
 type PaywallState = 'loading' | 'ready' | 'error' | 'no_products';
 
 export default function PaywallScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const queryClient = useQueryClient();
   const [paywallState, setPaywallState] = useState<PaywallState>('loading');
   const [errorMessage, setErrorMessage] = useState<string>('');
 
@@ -68,11 +71,15 @@ export default function PaywallScreen() {
 
   const handlePurchaseCompleted = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    // Immediately invalidate the premium status cache so the app refreshes
+    queryClient.invalidateQueries({ queryKey: premiumKeys.status() });
     router.back();
   };
 
   const handleRestoreCompleted = (info: { customerInfo: unknown }) => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    // Immediately invalidate the premium status cache so the app refreshes
+    queryClient.invalidateQueries({ queryKey: premiumKeys.status() });
     router.back();
   };
 

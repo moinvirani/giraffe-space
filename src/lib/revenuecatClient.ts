@@ -259,9 +259,12 @@ export const hasEntitlement = async (
     };
   }
 
-  const isActive = Boolean(
-    customerInfoResult.data.entitlements.active?.[entitlementId],
-  );
+  const activeEntitlements = customerInfoResult.data.entitlements.active;
+  console.log('[RevenueCat] Active entitlements:', JSON.stringify(activeEntitlements, null, 2));
+
+  const isActive = Boolean(activeEntitlements?.[entitlementId]);
+  console.log(`[RevenueCat] Entitlement "${entitlementId}" active:`, isActive);
+
   return { ok: true, data: isActive };
 };
 

@@ -20,6 +20,8 @@ import {
   Heart,
   Crown,
   Sparkles,
+  FileText,
+  Trash2,
 } from 'lucide-react-native';
 import { usePremium } from '@/lib/usePremium';
 import { useAppStore } from '@/lib/store';
@@ -96,6 +98,7 @@ export default function SettingsScreen() {
   const user = useAppStore(s => s.user);
   const setNotifications = useAppStore(s => s.setNotifications);
   const logout = useAppStore(s => s.logout);
+  const deleteAccount = useAppStore(s => s.deleteAccount);
   const { isPremium, isLoading: isPremiumLoading } = usePremium();
 
   const [notificationsEnabled, setNotificationsEnabled] = useState(
@@ -192,6 +195,50 @@ export default function SettingsScreen() {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
             await logout();
             router.replace('/onboarding');
+          },
+        },
+      ]
+    );
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Delete Account',
+      'Are you sure you want to permanently delete your account? This will remove all your data including:\n\n• Your profile and progress\n• All journal entries\n• Chat history\n• Badges and achievements\n\nThis action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete Account',
+          style: 'destructive',
+          onPress: () => {
+            // Second confirmation for extra safety
+            Alert.alert(
+              'Final Confirmation',
+              'This will permanently delete all your data. Are you absolutely sure?',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Yes, Delete Everything',
+                  style: 'destructive',
+                  onPress: async () => {
+                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+                    try {
+                      await deleteAccount();
+                      console.log('[SETTINGS] Account deleted successfully');
+                      router.replace('/onboarding');
+                    } catch (error) {
+                      const errorMessage = error instanceof Error ? error.message : 'Failed to delete account';
+                      console.log('[SETTINGS] Delete account error:', errorMessage);
+                      Alert.alert(
+                        'Deletion Failed',
+                        `Could not delete your account: ${errorMessage}\n\nPlease check the LOGS tab for details or contact support.`,
+                        [{ text: 'OK' }]
+                      );
+                    }
+                  },
+                },
+              ]
+            );
           },
         },
       ]
@@ -545,6 +592,15 @@ export default function SettingsScreen() {
               onPress={() => router.push('/privacy')}
             />
 
+            <SettingRow
+              icon={FileText}
+              iconColor={colors.primary[500]}
+              title="Terms of Use"
+              subtitle="Our terms and conditions"
+              right={<ChevronRight size={20} color={colors.jackal[300]} />}
+              onPress={() => router.push('/terms')}
+            />
+
             <View
               className="rounded-2xl p-4 mt-2"
               style={{ backgroundColor: colors.sage[50] }}
@@ -568,17 +624,36 @@ export default function SettingsScreen() {
             <Pressable onPress={handleLogout}>
               <View
                 className="flex-row items-center justify-center py-4 px-4 rounded-2xl"
-                style={{ backgroundColor: colors.coral[50] }}
+                style={{ backgroundColor: colors.cream[200] }}
               >
-                <LogOut size={20} color={colors.coral[500]} />
+                <LogOut size={20} color={colors.jackal[500]} />
                 <Text
                   className="text-base ml-2"
                   style={{
                     fontFamily: 'Nunito_600SemiBold',
-                    color: colors.coral[500],
+                    color: colors.jackal[500],
                   }}
                 >
                   Sign Out
+                </Text>
+              </View>
+            </Pressable>
+          </Animated.View>
+
+          {/* Delete Account */}
+          <Animated.View entering={FadeInDown.delay(500).springify()} className="mt-3">
+            <Pressable onPress={handleDeleteAccount}>
+              <View
+                className="flex-row items-center justify-center py-4 px-4"
+              >
+                <Text
+                  className="text-sm"
+                  style={{
+                    fontFamily: 'Nunito_500Medium',
+                    color: colors.coral[500],
+                  }}
+                >
+                  Delete Account
                 </Text>
               </View>
             </Pressable>

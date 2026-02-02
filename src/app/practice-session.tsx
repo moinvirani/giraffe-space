@@ -18,13 +18,83 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { X, Check, AlertCircle, ChevronRight, Trophy, Zap } from 'lucide-react-native';
 import { useAppStore } from '@/lib/store';
 import { colors } from '@/lib/colors';
 import { Exercise, NVCCategory } from '@/lib/types';
-import { getDailyExercises, getExercisesByCategory, getExerciseTypeName } from '@/lib/exercises';
+import { getDailyExercises, getExercisesByCategory, getExerciseTypeName, EXERCISES } from '@/lib/exercises';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+// Keys for persisting practice session state
+const PRACTICE_SESSION_KEY = '@giraffe_practice_session';
+
+interface PracticeSessionState {
+  exerciseIds: string[];
+  currentIndex: number;
+  correctCount: number;
+  xpEarned: number;
+  category?: string;
+  savedAt: string;
+}
+
+// Save practice session to AsyncStorage
+async function savePracticeSession(state: PracticeSessionState): Promise<void> {
+  try {
+    await AsyncStorage.setItem(PRACTICE_SESSION_KEY, JSON.stringify(state));
+  } catch (error) {
+    console.log('[PRACTICE] Error saving session:', error);
+  }
+}
+
+// Load practice session from AsyncStorage
+async function loadPracticeSession(category?: string): Promise<PracticeSessionState | null> {
+  try {
+    const stored = await AsyncStorage.getItem(PRACTICE_SESSION_KEY);
+    if (!stored) return null;
+
+    const session: PracticeSessionState = JSON.parse(stored);
+
+    // Check if it's the same type of practice (daily vs category)
+    if (session.category !== category) {
+      // Different practice type, start fresh
+      return null;
+    }
+
+    // Check if session is from today (for daily practice) or still valid
+    const savedDate = new Date(session.savedAt);
+    const now = new Date();
+    const isToday = savedDate.toDateString() === now.toDateString();
+
+    // For daily practice, only restore if it's from today
+    // For category practice, restore if it's less than 1 hour old
+    if (!category && !isToday) {
+      return null;
+    }
+
+    if (category) {
+      const hourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+      if (savedDate < hourAgo) {
+        return null;
+      }
+    }
+
+    return session;
+  } catch (error) {
+    console.log('[PRACTICE] Error loading session:', error);
+    return null;
+  }
+}
+
+// Clear practice session
+async function clearPracticeSession(): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(PRACTICE_SESSION_KEY);
+  } catch (error) {
+    console.log('[PRACTICE] Error clearing session:', error);
+  }
+}
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 interface ExerciseScreenProps {
@@ -526,32 +596,87 @@ export default function PracticeScreen() {
   const [correctCount, setCorrectCount] = useState(0);
   const [xpEarned, setXpEarned] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
+  // Load or create practice session
   useEffect(() => {
-    // Get exercises based on category or random daily practice
-    let exerciseList: Exercise[];
-    if (params.category) {
-      exerciseList = getExercisesByCategory(params.category).slice(0, 5);
-    } else {
-      exerciseList = getDailyExercises(5);
-    }
-    setExercises(exerciseList);
+    const initSession = async () => {
+      // Try to restore previous session
+      const savedSession = await loadPracticeSession(params.category);
+
+      if (savedSession && savedSession.currentIndex < savedSession.exerciseIds.length) {
+        // Restore previous session
+        const restoredExercises = savedSession.exerciseIds
+          .map(id => EXERCISES.find(e => e.id === id))
+          .filter((e): e is Exercise => e !== undefined);
+
+        if (restoredExercises.length === savedSession.exerciseIds.length) {
+          console.log('[PRACTICE] Restoring session at question', savedSession.currentIndex + 1);
+          setExercises(restoredExercises);
+          setCurrentIndex(savedSession.currentIndex);
+          setCorrectCount(savedSession.correctCount);
+          setXpEarned(savedSession.xpEarned);
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      // Create new session
+      let exerciseList: Exercise[];
+      if (params.category) {
+        exerciseList = getExercisesByCategory(params.category).slice(0, 5);
+      } else {
+        exerciseList = getDailyExercises(5);
+      }
+
+      // Save the new session
+      await savePracticeSession({
+        exerciseIds: exerciseList.map(e => e.id),
+        currentIndex: 0,
+        correctCount: 0,
+        xpEarned: 0,
+        category: params.category,
+        savedAt: new Date().toISOString(),
+      });
+
+      setExercises(exerciseList);
+      setIsLoading(false);
+    };
+
+    initSession();
   }, [params.category]);
 
   const handleAnswer = async (correct: boolean) => {
+    let newCorrectCount = correctCount;
+    let newXpEarned = xpEarned;
+
     if (correct) {
       const xp = exercises[currentIndex].xpReward;
-      setCorrectCount(c => c + 1);
-      setXpEarned(x => x + xp);
+      newCorrectCount = correctCount + 1;
+      newXpEarned = xpEarned + xp;
+      setCorrectCount(newCorrectCount);
+      setXpEarned(newXpEarned);
       await addXP(xp);
     }
 
     await completeExercise();
 
     if (currentIndex < exercises.length - 1) {
-      setCurrentIndex(i => i + 1);
+      const newIndex = currentIndex + 1;
+      setCurrentIndex(newIndex);
+
+      // Save progress
+      await savePracticeSession({
+        exerciseIds: exercises.map(e => e.id),
+        currentIndex: newIndex,
+        correctCount: newCorrectCount,
+        xpEarned: newXpEarned,
+        category: params.category,
+        savedAt: new Date().toISOString(),
+      });
     } else {
-      // Update streak when completing practice
+      // Practice complete - clear session and update streak
+      await clearPracticeSession();
       await updateStreak();
       setIsComplete(true);
     }
@@ -561,11 +686,12 @@ export default function PracticeScreen() {
     router.back();
   };
 
-  const handleClose = () => {
+  const handleClose = async () => {
+    // Session is already saved, just go back
     router.back();
   };
 
-  if (exercises.length === 0) {
+  if (isLoading || exercises.length === 0) {
     return (
       <View className="flex-1 items-center justify-center" style={{ backgroundColor: colors.cream[50] }}>
         <Text style={{ fontFamily: 'Nunito_500Medium', color: colors.jackal[500] }}>

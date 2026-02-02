@@ -1,37 +1,85 @@
-import { useState, useRef } from 'react';
-import { View, Text, TextInput, KeyboardAvoidingView, Platform, ScrollView, Pressable } from 'react-native';
+import { useState, useRef, useEffect } from 'react';
+import { View, Text, TextInput, KeyboardAvoidingView, Platform, ScrollView, Pressable, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAppStore } from '@/lib/store';
 import { colors } from '@/lib/colors';
-import { User, Mail, ArrowRight, Lock, Eye, EyeOff, CheckCircle2, MailCheck } from 'lucide-react-native';
+import { User, Mail, ArrowRight, Lock, Eye, EyeOff, CheckCircle2, MailCheck, ExternalLink } from 'lucide-react-native';
 import { PrimaryButton } from '@/components/Button';
-import { signUpWithEmail, signInWithEmail } from '@/lib/supabase';
+import { signUpWithEmail, signInWithEmail, resetPassword } from '@/lib/supabase';
+
+// Key to track if user has ever signed up
+const HAS_SIGNED_UP_KEY = '@giraffe_has_signed_up';
 
 type AuthMode = 'signup' | 'signin';
-type AuthState = 'form' | 'email-sent';
+type AuthState = 'form' | 'reset-sent';
 
 export default function AuthScreen() {
   const router = useRouter();
   const login = useAppStore(s => s.login);
-  const [mode, setMode] = useState<AuthMode>('signup');
+  const [mode, setMode] = useState<AuthMode>('signup'); // Will be updated on mount
   const [authState, setAuthState] = useState<AuthState>('form');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isCheckingPreviousUser, setIsCheckingPreviousUser] = useState(true);
   const [errors, setErrors] = useState<{ name?: string; email?: string; password?: string; general?: string }>({});
 
   const emailInputRef = useRef<TextInput>(null);
   const passwordInputRef = useRef<TextInput>(null);
 
+  // Check if user has previously signed up - show login by default if so
+  useEffect(() => {
+    const checkPreviousUser = async () => {
+      try {
+        const hasSignedUp = await AsyncStorage.getItem(HAS_SIGNED_UP_KEY);
+        if (hasSignedUp === 'true') {
+          setMode('signin');
+        }
+      } catch (error) {
+        console.log('Error checking previous user:', error);
+      } finally {
+        setIsCheckingPreviousUser(false);
+      }
+    };
+    checkPreviousUser();
+  }, []);
+
+  // Mark that user has signed up (called after successful signup)
+  const markAsSignedUp = async () => {
+    try {
+      await AsyncStorage.setItem(HAS_SIGNED_UP_KEY, 'true');
+    } catch (error) {
+      console.log('Error marking signup:', error);
+    }
+  };
+
   const validateEmail = (emailValue: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(emailValue);
+  };
+
+  // Helper to navigate user based on their progress
+  const navigateBasedOnProgress = () => {
+    const currentUser = useAppStore.getState().user;
+    const onboardingDone = useAppStore.getState().hasCompletedOnboarding;
+
+    if (!onboardingDone) {
+      // User hasn't done intake questionnaire
+      router.replace('/intake');
+    } else if (currentUser && !currentUser.hasCompletedIntro) {
+      // User did intake but hasn't finished intro lessons
+      router.replace('/intro-lesson');
+    } else {
+      // Fully onboarded user
+      router.replace('/(tabs)');
+    }
   };
 
   const handleAuth = async () => {
@@ -64,48 +112,30 @@ export default function AuthScreen() {
 
     try {
       if (mode === 'signup') {
-        const { user, session } = await signUpWithEmail(email.trim(), password, name.trim());
+        const { session } = await signUpWithEmail(email.trim(), password, name.trim());
 
-        // If we got a session back, user is logged in (email confirmation disabled)
+        // With email verification disabled, we always get a session back
         if (session) {
+          await markAsSignedUp(); // Remember user has signed up
           await login(name.trim(), email.trim(), 'adult');
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          router.replace('/intake');
-        } else if (user) {
-          // User created but needs email confirmation
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          setAuthState('email-sent');
+          navigateBasedOnProgress();
         } else {
-          // Neither session nor user - this usually means email already exists
-          // Supabase returns empty response for security (doesn't reveal if email exists)
-          setErrors({ general: 'This email may already be registered. Try signing in instead, or use a different email.' });
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+          // Fallback - should not happen with email verification disabled
+          // but if it does, just log them in anyway
+          await markAsSignedUp(); // Remember user has signed up
+          await login(name.trim(), email.trim(), 'adult');
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          navigateBasedOnProgress();
         }
       } else {
         const { user: supabaseUser } = await signInWithEmail(email.trim(), password);
         if (supabaseUser) {
+          await markAsSignedUp(); // Also mark on successful sign in
           const userName = supabaseUser.user_metadata?.name || email.split('@')[0];
           await login(userName, email.trim(), 'adult');
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-
-          // After login, check the current store state
-          // The login function sets isAuthenticated but doesn't change hasCompletedOnboarding
-          // So we check the stored value which was loaded at app start
-          // If user hasn't completed intake yet, send them there
-          // Also check if user has completed intro lessons
-          const currentUser = useAppStore.getState().user;
-          const onboardingDone = useAppStore.getState().hasCompletedOnboarding;
-
-          if (!onboardingDone) {
-            // User hasn't done intake questionnaire
-            router.replace('/intake');
-          } else if (currentUser && !currentUser.hasCompletedIntro) {
-            // User did intake but hasn't finished intro lessons
-            router.replace('/intro-lesson');
-          } else {
-            // Fully onboarded user
-            router.replace('/(tabs)');
-          }
+          navigateBasedOnProgress();
         }
       }
     } catch (error) {
@@ -116,14 +146,14 @@ export default function AuthScreen() {
       if (lowerMessage.includes('user already registered') ||
           lowerMessage.includes('already been registered') ||
           lowerMessage.includes('email already')) {
-        message = 'This email is already registered. Please sign in instead.';
-        // Auto-switch to sign in mode
-        setMode('signin');
+        message = 'This email is already registered. Try signing in instead.';
       } else if (lowerMessage.includes('invalid login credentials') ||
                  lowerMessage.includes('invalid email or password')) {
-        message = 'Invalid email or password. Please try again.';
-      } else if (lowerMessage.includes('email not confirmed')) {
-        message = 'Please verify your email before signing in. Check your inbox for the confirmation link.';
+        message = 'Invalid email or password. Please check your credentials and try again.';
+      } else if (lowerMessage.includes('rate limit') || lowerMessage.includes('too many requests') || lowerMessage.includes('too many attempts')) {
+        message = 'Too many attempts. Please wait 2-3 minutes before trying again. This helps protect your account.';
+      } else if (lowerMessage.includes('network') || lowerMessage.includes('fetch')) {
+        message = 'Connection error. Please check your internet and try again.';
       }
 
       setErrors({ general: message });
@@ -146,12 +176,66 @@ export default function AuthScreen() {
     setMode('signin');
   };
 
-  // Email confirmation sent screen
-  if (authState === 'email-sent') {
+  const handleOpenEmailApp = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    // Try to open the default mail app on iOS
+    try {
+      await Linking.openURL('message://');
+    } catch {
+      // If that fails, try mailto which should open the mail app
+      try {
+        await Linking.openURL('mailto:');
+      } catch {
+        // If all fails, just continue - user can manually open email
+      }
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email.trim()) {
+      setErrors({ email: 'Please enter your email first' });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      return;
+    }
+
+    if (!validateEmail(email.trim())) {
+      setErrors({ email: 'Please enter a valid email' });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      return;
+    }
+
+    setErrors({});
+    setIsLoading(true);
+
+    try {
+      await resetPassword(email.trim());
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setAuthState('reset-sent');
+    } catch (error) {
+      // Don't reveal if email exists or not for security
+      // Just show success message anyway
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setAuthState('reset-sent');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Show loading state while checking if user has previously signed up
+  if (isCheckingPreviousUser) {
+    return (
+      <View className="flex-1 items-center justify-center" style={{ backgroundColor: colors.cream[50] }}>
+        <Text className="text-4xl mb-4">🦒</Text>
+      </View>
+    );
+  }
+
+  // Password reset email sent screen
+  if (authState === 'reset-sent') {
     return (
       <View className="flex-1" style={{ backgroundColor: colors.cream[50] }}>
         <LinearGradient
-          colors={[colors.cream[50], colors.sage[50], colors.cream[100]]}
+          colors={[colors.cream[50], colors.primary[50], colors.cream[100]]}
           style={{ flex: 1 }}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
@@ -165,9 +249,9 @@ export default function AuthScreen() {
                 {/* Success icon */}
                 <View
                   className="w-24 h-24 rounded-full items-center justify-center mb-6"
-                  style={{ backgroundColor: colors.sage[100] }}
+                  style={{ backgroundColor: colors.primary[100] }}
                 >
-                  <MailCheck size={48} color={colors.sage[600]} strokeWidth={1.5} />
+                  <MailCheck size={48} color={colors.primary[600]} strokeWidth={1.5} />
                 </View>
 
                 <Text
@@ -187,18 +271,18 @@ export default function AuthScreen() {
                     color: colors.jackal[500],
                   }}
                 >
-                  We sent a confirmation link to:
+                  We sent a password reset link to:
                 </Text>
 
                 <View
                   className="px-4 py-2 rounded-full mb-6"
-                  style={{ backgroundColor: colors.sage[100] }}
+                  style={{ backgroundColor: colors.primary[100] }}
                 >
                   <Text
                     className="text-base"
                     style={{
                       fontFamily: 'Nunito_700Bold',
-                      color: colors.sage[700],
+                      color: colors.primary[700],
                     }}
                   >
                     {email}
@@ -206,7 +290,7 @@ export default function AuthScreen() {
                 </View>
 
                 <View
-                  className="p-5 rounded-2xl mb-8 w-full"
+                  className="p-5 rounded-2xl mb-6 w-full"
                   style={{ backgroundColor: colors.cream[100] }}
                 >
                   <Text
@@ -216,14 +300,14 @@ export default function AuthScreen() {
                       color: colors.jackal[600],
                     }}
                   >
-                    Click the link in your email to verify your account, then come back here to sign in.
+                    Tap the link in your email to reset your password. After resetting, come back here to sign in with your new password.
                   </Text>
                 </View>
 
                 {/* Tips */}
-                <View className="gap-2 mb-8 w-full">
+                <View className="gap-2 mb-6 w-full">
                   <View className="flex-row items-center">
-                    <CheckCircle2 size={16} color={colors.sage[500]} />
+                    <CheckCircle2 size={16} color={colors.primary[500]} />
                     <Text
                       className="text-sm ml-2"
                       style={{
@@ -235,7 +319,7 @@ export default function AuthScreen() {
                     </Text>
                   </View>
                   <View className="flex-row items-center">
-                    <CheckCircle2 size={16} color={colors.sage[500]} />
+                    <CheckCircle2 size={16} color={colors.primary[500]} />
                     <Text
                       className="text-sm ml-2"
                       style={{
@@ -243,28 +327,47 @@ export default function AuthScreen() {
                         color: colors.jackal[500],
                       }}
                     >
-                      The link expires in 24 hours
+                      The link expires in 1 hour
                     </Text>
                   </View>
                 </View>
               </Animated.View>
 
-              <Animated.View entering={FadeIn.delay(300)} className="w-full">
-                <PrimaryButton
-                  title="Go to Sign In"
-                  onPress={handleBackToForm}
-                  icon={ArrowRight}
-                />
-
-                <Text
-                  className="text-xs text-center mt-4"
-                  style={{
-                    fontFamily: 'Nunito_400Regular',
-                    color: colors.jackal[400],
-                  }}
+              <Animated.View entering={FadeIn.delay(300)} className="w-full gap-3">
+                {/* Open Email App button */}
+                <Pressable
+                  onPress={handleOpenEmailApp}
+                  className="flex-row items-center justify-center py-4 px-6 rounded-full"
+                  style={{ backgroundColor: colors.primary[500] }}
                 >
-                  Already verified? Sign in with your email and password.
-                </Text>
+                  <ExternalLink size={20} color="#fff" />
+                  <Text
+                    className="text-base ml-2"
+                    style={{
+                      fontFamily: 'Nunito_700Bold',
+                      color: '#fff',
+                    }}
+                  >
+                    Open Email App
+                  </Text>
+                </Pressable>
+
+                {/* Back to Sign In button */}
+                <Pressable
+                  onPress={handleBackToForm}
+                  className="flex-row items-center justify-center py-4 px-6 rounded-full"
+                  style={{ backgroundColor: colors.cream[200] }}
+                >
+                  <Text
+                    className="text-base"
+                    style={{
+                      fontFamily: 'Nunito_600SemiBold',
+                      color: colors.jackal[600],
+                    }}
+                  >
+                    Back to Sign In
+                  </Text>
+                </Pressable>
               </Animated.View>
             </View>
           </SafeAreaView>
@@ -498,6 +601,21 @@ export default function AuthScreen() {
                       >
                         {errors.password}
                       </Text>
+                    )}
+
+                    {/* Forgot Password link (signin only) */}
+                    {mode === 'signin' && (
+                      <Pressable onPress={handleForgotPassword} className="mt-2 self-end">
+                        <Text
+                          className="text-sm"
+                          style={{
+                            fontFamily: 'Nunito_600SemiBold',
+                            color: colors.primary[600],
+                          }}
+                        >
+                          Forgot Password?
+                        </Text>
+                      </Pressable>
                     )}
                   </View>
                 </Animated.View>

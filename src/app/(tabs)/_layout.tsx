@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, Text, Pressable, Platform } from 'react-native';
 import { Tabs } from 'expo-router';
-import { BlurView } from 'expo-blur';
 import { Home, Dumbbell, BookHeart, MessageCircle, Settings } from 'lucide-react-native';
 import { colors } from '@/lib/colors';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -53,28 +52,17 @@ export default function TabLayout() {
         headerShown: false,
         tabBarStyle: {
           position: 'absolute',
-          backgroundColor: Platform.OS === 'ios' ? 'transparent' : colors.cream[50],
-          borderTopWidth: 0,
+          backgroundColor: colors.cream[50],
+          borderTopWidth: 1,
+          borderTopColor: colors.cream[200],
           elevation: 0,
           height: 70 + insets.bottom,
           paddingTop: 8,
+          shadowColor: colors.jackal[300],
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.08,
+          shadowRadius: 8,
         },
-        tabBarBackground: () =>
-          Platform.OS === 'ios' ? (
-            <BlurView
-              intensity={80}
-              tint="light"
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                borderTopWidth: 1,
-                borderTopColor: colors.cream[200],
-              }}
-            />
-          ) : null,
         tabBarShowLabel: false,
         tabBarButton: (props) => (
           <Pressable

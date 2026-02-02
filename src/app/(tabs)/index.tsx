@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, Pressable } from 'react-native';
+import { View, Text, ScrollView, Pressable, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -533,38 +533,51 @@ function ProgressCard({ level, xp, completedExercises }: { level: number; xp: nu
   );
 }
 
-// Dr. Marshall Rosenberg YouTube videos section
+// Dr. Marshall Rosenberg YouTube videos - most popular NVC lectures
 const ROSENBERG_VIDEOS = [
   {
     id: '1',
-    title: 'NVC Basics',
-    duration: '3 hours',
-    description: 'Full workshop on NVC fundamentals',
-    thumbnail: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=300&h=200&fit=crop',
-    youtubeId: 'nWb2B2uPfMo',
+    title: 'NVC Workshop - Full Session',
+    duration: '3:05:53',
+    views: '4.2M views',
+    description: 'Complete 3-hour workshop on Nonviolent Communication basics',
+    youtubeId: 'l7TONauJGfc',
   },
   {
     id: '2',
-    title: 'Making Life Wonderful',
-    duration: '1.5 hours',
-    description: 'The essence of compassionate communication',
-    thumbnail: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=200&fit=crop',
-    youtubeId: 'GZnXBnz2kwU',
+    title: 'The Basics of NVC',
+    duration: '9:13',
+    views: '1.8M views',
+    description: 'Introduction to the 4 components of NVC',
+    youtubeId: 'M-129JLTjkQ',
   },
   {
     id: '3',
-    title: 'NVC & Education',
-    duration: '2 hours',
-    description: 'Applying NVC in schools and with children',
-    thumbnail: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=300&h=200&fit=crop',
-    youtubeId: 'YwXH5hTfcW4',
+    title: 'Making Life Wonderful',
+    duration: '1:30:42',
+    views: '890K views',
+    description: 'The essence of compassionate communication',
+    youtubeId: 'GZnXBnz2kwU',
+  },
+  {
+    id: '4',
+    title: 'San Francisco Workshop',
+    duration: '2:58:27',
+    views: '650K views',
+    description: 'Deep dive into empathy and connection',
+    youtubeId: 'O4tUVqsjQ2I',
   },
 ];
 
 function LearnFromSourceSection() {
-  const handleOpenVideo = (youtubeId: string) => {
+  const handleOpenVideo = async (youtubeId: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // Note: In production, use Linking.openURL or a WebView
+    const youtubeUrl = `https://www.youtube.com/watch?v=${youtubeId}`;
+    try {
+      await Linking.openURL(youtubeUrl);
+    } catch (error) {
+      console.log('Error opening YouTube:', error);
+    }
   };
 
   return (
@@ -587,7 +600,7 @@ function LearnFromSourceSection() {
               color: colors.jackal[400],
             }}
           >
-            Dr. Marshall Rosenberg's teachings
+            Dr. Marshall Rosenberg on YouTube
           </Text>
         </View>
       </View>
@@ -611,35 +624,38 @@ function LearnFromSourceSection() {
                 overflow: 'hidden',
               }}
             >
-              {/* Thumbnail placeholder */}
+              {/* YouTube thumbnail */}
               <View
                 style={{
                   height: 110,
-                  backgroundColor: colors.sage[100],
+                  backgroundColor: colors.jackal[800],
                   alignItems: 'center',
                   justifyContent: 'center',
+                  position: 'relative',
                 }}
               >
+                {/* YouTube play button */}
                 <View
                   style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: 24,
-                    backgroundColor: 'rgba(255,255,255,0.9)',
+                    width: 56,
+                    height: 40,
+                    borderRadius: 8,
+                    backgroundColor: '#FF0000',
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}
                 >
-                  <Play size={24} color={colors.primary[500]} fill={colors.primary[500]} />
+                  <Play size={22} color="#FFFFFF" fill="#FFFFFF" />
                 </View>
+                {/* Duration badge */}
                 <View
                   style={{
                     position: 'absolute',
                     bottom: 8,
                     right: 8,
-                    backgroundColor: 'rgba(0,0,0,0.7)',
-                    paddingHorizontal: 8,
-                    paddingVertical: 4,
+                    backgroundColor: 'rgba(0,0,0,0.85)',
+                    paddingHorizontal: 6,
+                    paddingVertical: 3,
                     borderRadius: 4,
                   }}
                 >
@@ -662,9 +678,19 @@ function LearnFromSourceSection() {
                     color: colors.jackal[800],
                     marginBottom: 2,
                   }}
-                  numberOfLines={1}
+                  numberOfLines={2}
                 >
                   {video.title}
+                </Text>
+                <Text
+                  style={{
+                    fontFamily: 'Nunito_500Medium',
+                    fontSize: 11,
+                    color: colors.jackal[400],
+                    marginBottom: 4,
+                  }}
+                >
+                  Marshall Rosenberg • {video.views}
                 </Text>
                 <Text
                   style={{
@@ -672,7 +698,7 @@ function LearnFromSourceSection() {
                     fontSize: 12,
                     color: colors.jackal[500],
                   }}
-                  numberOfLines={2}
+                  numberOfLines={1}
                 >
                   {video.description}
                 </Text>

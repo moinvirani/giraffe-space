@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User, JournalEntry, DailyProgress, Badge, ChatMessage, AgeGroup } from './types';
-import { signOut } from './supabase';
+import { signOut, deleteUserAccount } from './supabase';
 
 const DEFAULT_BADGES: Badge[] = [
   { id: 'first-step', name: 'First Step', description: 'Complete your first exercise', icon: '🌱', unlockedAt: null, requirement: 1, type: 'exercises' },
@@ -33,6 +33,7 @@ interface AppState {
   // Actions
   login: (name: string, email: string, ageGroup: AgeGroup) => Promise<void>;
   logout: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
   completeOnboarding: () => Promise<void>;
   updateUser: (updates: Partial<User>) => Promise<void>;
   addXP: (amount: number) => Promise<void>;
@@ -110,6 +111,40 @@ export const useAppStore = create<AppState>((set, get) => ({
   todayExercisesCompleted: 0,
 
   login: async (name: string, email: string, ageGroup: AgeGroup) => {
+    // Check if there's existing user data in AsyncStorage (from previous session)
+    const existingUserJson = await AsyncStorage.getItem(STORAGE_KEYS.user);
+
+    if (existingUserJson) {
+      const existingUser = JSON.parse(existingUserJson) as User;
+
+      // Only restore if it's the SAME user (same email)
+      // This prevents restoring old user data for a new signup
+      if (existingUser.email === email) {
+        // Same user signing back in - restore their progress AND onboarding state
+        const updatedUser: User = {
+          ...existingUser,
+          name, // Update name in case it changed
+        };
+        // Also restore the onboarding state from AsyncStorage
+        const onboardingDone = await AsyncStorage.getItem(STORAGE_KEYS.onboarding);
+        const hasCompletedOnboarding = onboardingDone === 'true';
+
+        await AsyncStorage.setItem(STORAGE_KEYS.user, JSON.stringify(updatedUser));
+        set({ isAuthenticated: true, user: updatedUser, hasCompletedOnboarding });
+        return;
+      }
+
+      // Different user - clear old data and create fresh
+      await AsyncStorage.multiRemove([
+        STORAGE_KEYS.user,
+        STORAGE_KEYS.onboarding,
+        STORAGE_KEYS.journal,
+        STORAGE_KEYS.progress,
+      ]);
+      set({ hasCompletedOnboarding: false, journalEntries: [], dailyProgress: [] });
+    }
+
+    // Create new user
     const newUser: User = {
       id: Date.now().toString(),
       name,
@@ -134,14 +169,38 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   logout: async () => {
-    // Sign out from Supabase first
+    // Only sign out from Supabase - keep local data intact
+    // User's journal entries, progress, and streaks remain on device
     try {
       await signOut();
     } catch (error) {
       console.log('Error signing out from Supabase:', error);
     }
-    // Then clear local storage
+    // Only update auth state, don't clear any local data
+    set({
+      isAuthenticated: false,
+    });
+  },
+
+  deleteAccount: async () => {
+    console.log('[STORE v2] deleteAccount called');
+    // First, try to delete the user from Supabase Auth via Edge Function
+    const result = await deleteUserAccount();
+
+    if (!result.success) {
+      // Return the error so the UI can show it to the user
+      // For Apple compliance, we should NOT proceed if the server deletion fails
+      console.log('[STORE v2] Delete account failed:', result.error);
+      throw new Error(result.error || 'Failed to delete account from server');
+    }
+
+    console.log('[STORE v2] Server deletion successful, clearing local data');
+
+    // Clear all local storage - this permanently deletes all user data
     await AsyncStorage.multiRemove(Object.values(STORAGE_KEYS));
+    // Also clear any other potential storage keys
+    await AsyncStorage.removeItem('@giraffe_supabase_session');
+
     set({
       isAuthenticated: false,
       hasCompletedOnboarding: false,

@@ -109,6 +109,13 @@ function RootLayoutNav({ colorScheme }: { colorScheme: 'light' | 'dark' | null |
             animation: 'slide_from_bottom',
           }}
         />
+        <Stack.Screen
+          name="reset-password"
+          options={{
+            presentation: 'fullScreenModal',
+            animation: 'slide_from_bottom',
+          }}
+        />
       </Stack>
     </ThemeProvider>
   );

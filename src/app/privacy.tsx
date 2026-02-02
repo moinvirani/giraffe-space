@@ -93,7 +93,7 @@ export default function PrivacyScreen() {
           </Section>
 
           <Section title="Contact Us">
-            If you have questions about this Privacy Policy, please contact us at support@giraffeapp.com
+            If you have questions about this Privacy Policy, please contact us at giraffespaceapp@gmail.com
           </Section>
 
           <View
