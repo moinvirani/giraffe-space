@@ -1,0 +1,36 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// User profile analytics - stores demographic data for app analytics
+// This data is explicitly provided by users during onboarding
+// App Store compliant: user-provided data only, no device tracking
+model UserProfile {
+  id        String   @id @default(cuid())
+  email     String   @unique // Links to user's account
+  name      String?
+
+  // Demographics (user-provided during intake)
+  gender    String?  // 'male', 'female', 'non-binary', 'prefer-not-to-say'
+  ageRange  String?  // '18-24', '25-34', '35-44', '45-54', '55+'
+
+  // Goals (user-selected during intake)
+  goals     String?  // JSON array of goals like ['relationship', 'parenting', 'anxiety']
+
+  // App usage stats (for analytics)
+  totalXP           Int      @default(0)
+  level             Int      @default(1)
+  completedExercises Int     @default(0)
+  streak            Int      @default(0)
+  longestStreak     Int      @default(0)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  lastActiveAt DateTime?
+}
