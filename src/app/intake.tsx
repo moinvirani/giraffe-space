@@ -2,12 +2,12 @@ import { useState } from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import Animated, { FadeIn, FadeInUp, SlideInRight, SlideOutLeft } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { ArrowRight, ArrowLeft, Check } from 'lucide-react-native';
 import { colors } from '@/lib/colors';
 import { useAppStore } from '@/lib/store';
 import { Gender, AgeRange, NVCGoal, UserProfile } from '@/lib/types';
+import { syncUserProfile } from '@/lib/api/profile';
 
 type IntakeStep = 'welcome' | 'about-you' | 'goals' | 'complete';
 
@@ -138,8 +138,8 @@ function GoalCard({
 export default function IntakeScreen() {
   const router = useRouter();
   const updateUser = useAppStore(s => s.updateUser);
-  const completeOnboarding = useAppStore(s => s.completeOnboarding);
   const userName = useAppStore(s => s.user?.name) ?? 'friend';
+  const userEmail = useAppStore(s => s.user?.email) ?? '';
 
   const [step, setStep] = useState<IntakeStep>('welcome');
   const [selectedGender, setSelectedGender] = useState<Gender | null>(null);
@@ -163,14 +163,25 @@ export default function IntakeScreen() {
     } else if (step === 'about-you') {
       setStep('goals');
     } else if (step === 'goals') {
-      // Save profile and complete
+      // Save profile and mark intake as complete
       const profile: UserProfile = {
         gender: selectedGender ?? undefined,
         ageRange: selectedAge ?? undefined,
         goals: selectedGoals.length > 0 ? selectedGoals : undefined,
       };
-      await updateUser({ profile });
-      await completeOnboarding();
+      await updateUser({ profile, hasCompletedIntake: true });
+
+      // Sync profile to backend for analytics (non-blocking)
+      if (userEmail) {
+        syncUserProfile({
+          email: userEmail,
+          name: userName,
+          gender: selectedGender ?? undefined,
+          ageRange: selectedAge ?? undefined,
+          goals: selectedGoals.length > 0 ? selectedGoals : undefined,
+        }).catch(err => console.log('[INTAKE] Background sync error:', err));
+      }
+
       setStep('complete');
     } else if (step === 'complete') {
       // Go to intro-lesson to start learning the basics
@@ -186,7 +197,17 @@ export default function IntakeScreen() {
 
   const handleSkip = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    await completeOnboarding();
+    // Mark intake as complete even if skipped
+    await updateUser({ hasCompletedIntake: true });
+
+    // Sync basic profile to backend (non-blocking)
+    if (userEmail) {
+      syncUserProfile({
+        email: userEmail,
+        name: userName,
+      }).catch(err => console.log('[INTAKE] Background sync error:', err));
+    }
+
     // Go to intro-lesson to start learning the basics
     router.replace('/intro-lesson');
   };
@@ -227,8 +248,7 @@ export default function IntakeScreen() {
         >
           {/* Welcome Step */}
           {step === 'welcome' && (
-            <Animated.View
-              entering={FadeIn}
+            <View
               className="flex-1 px-6 pt-12"
             >
               <View className="items-center mb-8">
@@ -300,14 +320,12 @@ export default function IntakeScreen() {
               >
                 Let's personalize your experience with a few quick questions.
               </Text>
-            </Animated.View>
+            </View>
           )}
 
           {/* About You Step */}
           {step === 'about-you' && (
-            <Animated.View
-              entering={SlideInRight.springify()}
-              exiting={SlideOutLeft}
+            <View
               className="flex-1 px-6 pt-8"
             >
               <Text
@@ -382,14 +400,12 @@ export default function IntakeScreen() {
                   This helps us personalize your experience. Your information is private and never shared.
                 </Text>
               </View>
-            </Animated.View>
+            </View>
           )}
 
           {/* Goals Step */}
           {step === 'goals' && (
-            <Animated.View
-              entering={SlideInRight.springify()}
-              exiting={SlideOutLeft}
+            <View
               className="flex-1 px-6 pt-8"
             >
               <Text
@@ -437,13 +453,12 @@ export default function IntakeScreen() {
                   This app is for educational purposes and personal growth. It is not a substitute for professional mental health care or therapy.
                 </Text>
               </View>
-            </Animated.View>
+            </View>
           )}
 
           {/* Complete Step */}
           {step === 'complete' && (
-            <Animated.View
-              entering={FadeInUp.springify()}
+            <View
               className="flex-1 px-6 pt-12 items-center"
             >
               <Text className="text-6xl mb-4">🎉</Text>
@@ -509,7 +524,7 @@ export default function IntakeScreen() {
                   </Text>
                 </View>
               </View>
-            </Animated.View>
+            </View>
           )}
         </ScrollView>
 

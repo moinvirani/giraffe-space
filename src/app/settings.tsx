@@ -10,9 +10,6 @@ import {
   X,
   Bell,
   Clock,
-  User,
-  Mail,
-  Trophy,
   Flame,
   LogOut,
   ChevronRight,
@@ -21,7 +18,7 @@ import {
   Crown,
   Sparkles,
   FileText,
-  Trash2,
+  Trophy,
 } from 'lucide-react-native';
 import { usePremium } from '@/lib/usePremium';
 import { useAppStore } from '@/lib/store';
@@ -96,17 +93,19 @@ export default function SettingsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const user = useAppStore(s => s.user);
-  const setNotifications = useAppStore(s => s.setNotifications);
+  const updateUser = useAppStore(s => s.updateUser);
   const logout = useAppStore(s => s.logout);
   const deleteAccount = useAppStore(s => s.deleteAccount);
   const { isPremium, isLoading: isPremiumLoading } = usePremium();
 
-  const [notificationsEnabled, setNotificationsEnabled] = useState(
+  // Single reminder state
+  const [reminderEnabled, setReminderEnabled] = useState(
     user?.notificationsEnabled ?? true
   );
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [reminderTime, setReminderTime] = useState(() => {
-    const [hours, minutes] = (user?.reminderTime ?? '09:00').split(':');
+    const timeStr = user?.reminderTime ?? '20:00';
+    const [hours, minutes] = timeStr.split(':');
     const date = new Date();
     date.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
     return date;
@@ -124,33 +123,34 @@ export default function SettingsScreen() {
     return finalStatus === 'granted';
   };
 
-  const scheduleNotification = async (time: Date) => {
+  // Schedule daily notification
+  const scheduleNotification = async (enabled: boolean, time: Date) => {
     // Cancel existing notifications
     await Notifications.cancelAllScheduledNotificationsAsync();
 
-    if (!notificationsEnabled) return;
-
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: "Time for Giraffe Practice! 🦒",
-        body: "Take 5 minutes to grow your compassionate communication skills.",
-        sound: true,
-      },
-      trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.DAILY,
-        hour: time.getHours(),
-        minute: time.getMinutes(),
-      },
-    });
+    if (enabled) {
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: "Time for Giraffe Practice! 🦒",
+          body: "Take 5 minutes to grow your compassionate communication skills.",
+          sound: true,
+        },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.DAILY,
+          hour: time.getHours(),
+          minute: time.getMinutes(),
+        },
+      });
+    }
   };
 
-  const handleNotificationToggle = async (value: boolean) => {
+  const handleReminderToggle = async (value: boolean) => {
     if (value) {
       const granted = await requestNotificationPermission();
       if (!granted) {
         Alert.alert(
           'Notifications Disabled',
-          'Please enable notifications in your device settings to receive daily reminders.',
+          'Please enable notifications in your device settings to receive reminders.',
           [{ text: 'OK' }]
         );
         return;
@@ -158,14 +158,15 @@ export default function SettingsScreen() {
     }
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setNotificationsEnabled(value);
-    await setNotifications(value);
+    setReminderEnabled(value);
 
-    if (value) {
-      await scheduleNotification(reminderTime);
-    } else {
-      await Notifications.cancelAllScheduledNotificationsAsync();
-    }
+    const timeStr = `${reminderTime.getHours().toString().padStart(2, '0')}:${reminderTime.getMinutes().toString().padStart(2, '0')}`;
+    await updateUser({
+      notificationsEnabled: value,
+      reminderTime: timeStr,
+    });
+
+    await scheduleNotification(value, reminderTime);
   };
 
   const handleTimeChange = async (event: any, selectedDate?: Date) => {
@@ -173,11 +174,13 @@ export default function SettingsScreen() {
 
     if (selectedDate) {
       setReminderTime(selectedDate);
-      const timeString = `${selectedDate.getHours().toString().padStart(2, '0')}:${selectedDate.getMinutes().toString().padStart(2, '0')}`;
-      await setNotifications(notificationsEnabled, timeString);
+      const timeStr = `${selectedDate.getHours().toString().padStart(2, '0')}:${selectedDate.getMinutes().toString().padStart(2, '0')}`;
+      await updateUser({
+        reminderTime: timeStr,
+      });
 
-      if (notificationsEnabled) {
-        await scheduleNotification(selectedDate);
+      if (reminderEnabled) {
+        await scheduleNotification(reminderEnabled, selectedDate);
       }
     }
   };
@@ -194,7 +197,7 @@ export default function SettingsScreen() {
           onPress: async () => {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
             await logout();
-            router.replace('/onboarding');
+            router.replace('/auth');
           },
         },
       ]
@@ -225,7 +228,7 @@ export default function SettingsScreen() {
                     try {
                       await deleteAccount();
                       console.log('[SETTINGS] Account deleted successfully');
-                      router.replace('/onboarding');
+                      router.replace('/auth');
                     } catch (error) {
                       const errorMessage = error instanceof Error ? error.message : 'Failed to delete account';
                       console.log('[SETTINGS] Delete account error:', errorMessage);
@@ -502,28 +505,29 @@ export default function SettingsScreen() {
                 color: colors.jackal[400],
               }}
             >
-              Notifications
+              Reminders
             </Text>
 
+            {/* Daily Reminder */}
             <SettingRow
               icon={Bell}
               iconColor={colors.primary[500]}
-              title="Daily Reminders"
-              subtitle="Get a gentle nudge to practice"
+              title="Daily Reminder"
+              subtitle="Get reminded to practice each day"
               right={
                 <Switch
-                  value={notificationsEnabled}
-                  onValueChange={handleNotificationToggle}
+                  value={reminderEnabled}
+                  onValueChange={handleReminderToggle}
                   trackColor={{ false: colors.cream[300], true: colors.primary[400] }}
                   thumbColor="#FFFFFF"
                 />
               }
             />
 
-            {notificationsEnabled && (
+            {reminderEnabled && (
               <SettingRow
                 icon={Clock}
-                iconColor={colors.sage[500]}
+                iconColor={colors.primary[400]}
                 title="Reminder Time"
                 subtitle={formatTime(reminderTime)}
                 onPress={() => setShowTimePicker(true)}

@@ -55,9 +55,16 @@ export interface User {
   level: number;
   completedExercises: number;
   badges: Badge[];
+  // Legacy notification field (kept for backwards compatibility)
   notificationsEnabled: boolean;
   reminderTime: string; // HH:mm format
+  // New separate notification settings
+  practiceRemindersEnabled?: boolean;
+  practiceReminderTime?: string; // HH:mm format
+  journalRemindersEnabled?: boolean;
+  journalReminderTime?: string; // HH:mm format
   hasCompletedIntro: boolean;
+  hasCompletedIntake?: boolean; // Whether user completed the intake questionnaire (gender, age, goals)
   introProgress: number; // 0-4 for 4 intro lessons
   profile?: UserProfile;
 }
@@ -72,6 +79,16 @@ export interface Badge {
   type: 'streak' | 'exercises' | 'level' | 'special';
 }
 
+export interface FillBlankData {
+  sentence: string; // Sentence with ___ markers for blanks
+  blankOptions: string[]; // Word chips to choose from (shuffled)
+  correctBlanks: string[]; // Correct words in order of blanks
+  // For blanks that can be filled in any order (e.g., "blame ourselves" and "blame them")
+  // Specify which blank indices are interchangeable as groups
+  // Example: [[0, 1]] means blanks 0 and 1 can be filled in either order
+  interchangeableGroups?: number[][];
+}
+
 export interface Exercise {
   id: string;
   type: ExerciseType;
@@ -82,6 +99,8 @@ export interface Exercise {
   xpReward: number;
   difficulty: 'beginner' | 'intermediate' | 'advanced';
   category: NVCCategory;
+  tier: 1 | 2 | 3 | 4 | 5; // Progressive tier system
+  fillBlankData?: FillBlankData; // For Duolingo-style fill-in-the-blank
 }
 
 export type ExerciseType =
@@ -90,14 +109,20 @@ export type ExerciseType =
   | 'need-finder'
   | 'jackal-to-giraffe'
   | 'fill-blank'
-  | 'scenario';
+  | 'scenario'
+  | 'empathy-check' // New: Identify empathic vs non-empathic responses
+  | 'self-empathy'  // New: Self-compassion exercises
+  | 'anger-nvc'     // New: Expressing anger through NVC
+  | 'appreciation'; // New: NVC appreciation format
 
 export type NVCCategory =
   | 'observations'
   | 'feelings'
   | 'needs'
   | 'requests'
-  | 'integration';
+  | 'integration'
+  | 'empathy'       // New category
+  | 'self-care';    // New category
 
 export interface JournalEntry {
   id: string;

@@ -260,10 +260,9 @@ export async function refreshSession(): Promise<Session | null> {
 }
 
 export async function resetPassword(email: string): Promise<void> {
-  // Use the app's bundle ID based URL scheme for deep linking
-  // This works for both TestFlight and App Store builds
-  // Format: com.vibecode.giraffespace.3zxdgq://reset-password
-  const redirectTo = 'com.vibecode.giraffespace.3zxdgq://reset-password';
+  // Use the app's registered URL scheme for deep linking
+  // The scheme "vibecode" is registered in app.json
+  const redirectTo = 'vibecode://reset-password';
 
   await supabaseRequest('/auth/v1/recover', {
     method: 'POST',

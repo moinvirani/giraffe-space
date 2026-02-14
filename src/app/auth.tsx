@@ -68,10 +68,10 @@ export default function AuthScreen() {
   // Helper to navigate user based on their progress
   const navigateBasedOnProgress = () => {
     const currentUser = useAppStore.getState().user;
-    const onboardingDone = useAppStore.getState().hasCompletedOnboarding;
 
-    if (!onboardingDone) {
-      // User hasn't done intake questionnaire
+    // Check if user has completed the intake questionnaire
+    if (currentUser && !currentUser.hasCompletedIntake) {
+      // User hasn't done intake questionnaire (gender, age, goals)
       router.replace('/intake');
     } else if (currentUser && !currentUser.hasCompletedIntro) {
       // User did intake but hasn't finished intro lessons
@@ -471,6 +471,8 @@ export default function AuthScreen() {
                         autoCorrect={false}
                         returnKeyType="next"
                         onSubmitEditing={() => emailInputRef.current?.focus()}
+                        cursorColor="#007AFF"
+                        selectionColor="#007AFF50"
                       />
                     </View>
                     {errors.name && (
@@ -526,6 +528,8 @@ export default function AuthScreen() {
                         keyboardType="email-address"
                         returnKeyType="next"
                         onSubmitEditing={() => passwordInputRef.current?.focus()}
+                        cursorColor="#007AFF"
+                        selectionColor="#007AFF50"
                       />
                     </View>
                     {errors.email && (
@@ -579,6 +583,8 @@ export default function AuthScreen() {
                         autoCapitalize="none"
                         autoCorrect={false}
                         returnKeyType="done"
+                        cursorColor="#007AFF"
+                        selectionColor="#007AFF50"
                       />
                       <Pressable
                         onPress={() => setShowPassword(!showPassword)}

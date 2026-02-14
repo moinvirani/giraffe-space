@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User, JournalEntry, DailyProgress, Badge, ChatMessage, AgeGroup } from './types';
 import { signOut, deleteUserAccount } from './supabase';
+import { logoutUser as logoutRevenueCat } from './revenuecatClient';
+import { syncUserProfile } from './api/profile';
 
 const DEFAULT_BADGES: Badge[] = [
   { id: 'first-step', name: 'First Step', description: 'Complete your first exercise', icon: '🌱', unlockedAt: null, requirement: 1, type: 'exercises' },
@@ -47,6 +49,7 @@ interface AppState {
   clearChat: () => void;
   loadPersistedState: () => Promise<void>;
   setNotifications: (enabled: boolean, time?: string) => Promise<void>;
+  syncToBackend: () => Promise<void>;
 }
 
 const STORAGE_KEYS = {
@@ -86,11 +89,19 @@ const checkBadges = (user: User): Badge[] => {
   });
 };
 
+// Get date string in YYYY-MM-DD format for consistent comparison
+const getDateKey = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 const isToday = (dateString: string | null): boolean => {
   if (!dateString) return false;
   const date = new Date(dateString);
   const today = new Date();
-  return date.toDateString() === today.toDateString();
+  return getDateKey(date) === getDateKey(today);
 };
 
 const isYesterday = (dateString: string | null): boolean => {
@@ -98,7 +109,7 @@ const isYesterday = (dateString: string | null): boolean => {
   const date = new Date(dateString);
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
-  return date.toDateString() === yesterday.toDateString();
+  return getDateKey(date) === getDateKey(yesterday);
 };
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -126,11 +137,20 @@ export const useAppStore = create<AppState>((set, get) => ({
           name, // Update name in case it changed
         };
         // Also restore the onboarding state from AsyncStorage
-        const onboardingDone = await AsyncStorage.getItem(STORAGE_KEYS.onboarding);
+        const [onboardingDone, journalJson] = await Promise.all([
+          AsyncStorage.getItem(STORAGE_KEYS.onboarding),
+          AsyncStorage.getItem(STORAGE_KEYS.journal),
+        ]);
         const hasCompletedOnboarding = onboardingDone === 'true';
+        const journalEntries = journalJson ? JSON.parse(journalJson) : [];
 
         await AsyncStorage.setItem(STORAGE_KEYS.user, JSON.stringify(updatedUser));
-        set({ isAuthenticated: true, user: updatedUser, hasCompletedOnboarding });
+        set({
+          isAuthenticated: true,
+          user: updatedUser,
+          hasCompletedOnboarding,
+          journalEntries,
+        });
         return;
       }
 
@@ -140,6 +160,9 @@ export const useAppStore = create<AppState>((set, get) => ({
         STORAGE_KEYS.onboarding,
         STORAGE_KEYS.journal,
         STORAGE_KEYS.progress,
+        '@giraffe_notification_prompt_shown', // Clear notification prompt for new user
+        '@giraffe_practice_session', // Clear any in-progress practice session
+        '@giraffe_last_session_exercises', // Clear last session exercises
       ]);
       set({ hasCompletedOnboarding: false, journalEntries: [], dailyProgress: [] });
     }
@@ -159,8 +182,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       completedExercises: 0,
       badges: DEFAULT_BADGES,
       notificationsEnabled: true,
-      reminderTime: '09:00',
+      reminderTime: '20:00',
       hasCompletedIntro: false,
+      hasCompletedIntake: false,
       introProgress: 0,
     };
 
@@ -169,16 +193,36 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   logout: async () => {
-    // Only sign out from Supabase - keep local data intact
-    // User's journal entries, progress, and streaks remain on device
+    // Sign out from Supabase and clear user session
     try {
       await signOut();
     } catch (error) {
       console.log('Error signing out from Supabase:', error);
     }
-    // Only update auth state, don't clear any local data
+
+    // Sign out from RevenueCat to clear subscription state
+    try {
+      await logoutRevenueCat();
+    } catch (error) {
+      console.log('Error signing out from RevenueCat:', error);
+    }
+
+    // IMPORTANT: Do NOT clear user data from AsyncStorage on logout!
+    // User data (progress, onboarding, journal) is preserved so when
+    // the same user logs back in, their progress is restored.
+    // Only deleteAccount should clear user data completely.
+
+    // Reset in-memory state only - user can log back in and restore
     set({
       isAuthenticated: false,
+      // Keep hasCompletedOnboarding and user data in AsyncStorage
+      // so it can be restored on next login
+      hasCompletedOnboarding: false,
+      user: null,
+      journalEntries: [],
+      chatMessages: [],
+      dailyProgress: [],
+      todayExercisesCompleted: 0,
     });
   },
 
@@ -196,10 +240,24 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     console.log('[STORE v2] Server deletion successful, clearing local data');
 
+    // Sign out from RevenueCat to clear subscription state
+    try {
+      await logoutRevenueCat();
+    } catch (error) {
+      console.log('Error signing out from RevenueCat during account deletion:', error);
+    }
+
     // Clear all local storage - this permanently deletes all user data
     await AsyncStorage.multiRemove(Object.values(STORAGE_KEYS));
     // Also clear any other potential storage keys
     await AsyncStorage.removeItem('@giraffe_supabase_session');
+    // Clear the signup history so new user starts fresh
+    await AsyncStorage.removeItem('@giraffe_has_signed_up');
+    // Clear notification and practice session keys
+    await AsyncStorage.removeItem('@giraffe_notification_prompt_shown');
+    await AsyncStorage.removeItem('@giraffe_practice_session');
+    await AsyncStorage.removeItem('@giraffe_last_session_exercises');
+    await AsyncStorage.removeItem('@giraffe_seen_concepts');
 
     set({
       isAuthenticated: false,
@@ -246,7 +304,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     await updateUser({
       completedExercises: newCompletedExercises,
       badges: updatedBadges,
-      lastPracticeDate: new Date().toISOString(),
+      // NOTE: lastPracticeDate is set in updateStreak, not here
     });
 
     set({ todayExercisesCompleted: todayExercisesCompleted + 1 });
@@ -254,23 +312,33 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   updateStreak: async () => {
     const { user, updateUser } = get();
-    if (!user) return;
+    if (!user) {
+      console.log('[STREAK] No user found, skipping streak update');
+      return;
+    }
+
+    console.log('[STREAK] Current user streak:', user.streak, 'lastPracticeDate:', user.lastPracticeDate);
 
     const now = new Date().toISOString();
 
     if (isToday(user.lastPracticeDate)) {
+      console.log('[STREAK] Already practiced today, skipping');
       return; // Already practiced today
     }
 
     let newStreak: number;
     if (isYesterday(user.lastPracticeDate)) {
       newStreak = user.streak + 1;
+      console.log('[STREAK] Practiced yesterday, incrementing streak to:', newStreak);
     } else {
-      newStreak = 1; // Reset streak
+      newStreak = 1; // Reset streak (or start fresh)
+      console.log('[STREAK] First practice or gap in practice, setting streak to 1');
     }
 
     const newLongestStreak = Math.max(newStreak, user.longestStreak);
     const updatedBadges = checkBadges({ ...user, streak: newStreak });
+
+    console.log('[STREAK] Calling updateUser with streak:', newStreak, 'longestStreak:', newLongestStreak);
 
     await updateUser({
       streak: newStreak,
@@ -278,6 +346,10 @@ export const useAppStore = create<AppState>((set, get) => ({
       lastPracticeDate: now,
       badges: updatedBadges,
     });
+
+    // Verify the update
+    const updatedState = get();
+    console.log('[STREAK] After update - user streak:', updatedState.user?.streak, 'lastPracticeDate:', updatedState.user?.lastPracticeDate);
   },
 
   completeIntroLesson: async () => {
@@ -331,9 +403,11 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   addChatMessage: (message) => {
     const { chatMessages } = get();
+    // Use combination of timestamp + random string to ensure unique IDs
+    const uniqueId = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
     const newMessage: ChatMessage = {
       ...message,
-      id: Date.now().toString(),
+      id: uniqueId,
       timestamp: new Date().toISOString(),
     };
     set({ chatMessages: [...chatMessages, newMessage] });
@@ -382,5 +456,27 @@ export const useAppStore = create<AppState>((set, get) => ({
       notificationsEnabled: enabled,
       reminderTime: time || user.reminderTime,
     });
+  },
+
+  syncToBackend: async () => {
+    const { user } = get();
+    if (!user || !user.email) {
+      console.log('[SYNC] No user or email, skipping backend sync');
+      return;
+    }
+
+    try {
+      await syncUserProfile({
+        email: user.email,
+        name: user.name,
+        totalXP: user.totalXP,
+        level: user.level,
+        completedExercises: user.completedExercises,
+        streak: user.streak,
+        longestStreak: user.longestStreak,
+      });
+    } catch (error) {
+      console.error('[SYNC] Error syncing to backend:', error);
+    }
   },
 }));

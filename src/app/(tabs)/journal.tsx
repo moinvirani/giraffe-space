@@ -1,20 +1,26 @@
-import { View, Text, ScrollView, Pressable } from 'react-native';
+import { View, Text, ScrollView, Pressable, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useState, useMemo } from 'react';
 import Animated, {
   FadeIn,
   FadeInDown,
+  FadeInUp,
+  FadeOut,
   useSharedValue,
   useAnimatedStyle,
   withSpring,
+  withTiming,
+  interpolate,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-import { Plus, BookOpen, Calendar, ChevronRight, Heart } from 'lucide-react-native';
+import { Plus, BookOpen, ChevronRight, Heart, X, Sparkles, PenLine } from 'lucide-react-native';
 import { useAppStore } from '@/lib/store';
 import { colors } from '@/lib/colors';
 import { JournalEntry } from '@/lib/types';
-import { format, isToday, isYesterday, parseISO } from 'date-fns';
+import { format, isToday, isYesterday, parseISO, isSameDay } from 'date-fns';
+import { CalendarStrip } from '@/components/CalendarStrip';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -215,11 +221,216 @@ function EmptyState({ onCreateNew }: { onCreateNew: () => void }) {
   );
 }
 
+// Floating Action Button with expandable options
+function JournalFAB({
+  onQuickNote,
+  onGuidedReflection,
+}: {
+  onQuickNote: () => void;
+  onGuidedReflection: () => void;
+}) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const rotation = useSharedValue(0);
+  const scale = useSharedValue(1);
+
+  const toggleExpand = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setIsExpanded(!isExpanded);
+    rotation.value = withSpring(isExpanded ? 0 : 45);
+  };
+
+  const fabIconStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${rotation.value}deg` }],
+  }));
+
+  const handleQuickNote = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setIsExpanded(false);
+    rotation.value = withSpring(0);
+    onQuickNote();
+  };
+
+  const handleGuidedReflection = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setIsExpanded(false);
+    rotation.value = withSpring(0);
+    onGuidedReflection();
+  };
+
+  return (
+    <>
+      {/* Backdrop */}
+      {isExpanded && (
+        <Pressable
+          className="absolute inset-0"
+          style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}
+          onPress={() => {
+            setIsExpanded(false);
+            rotation.value = withSpring(0);
+          }}
+        >
+          <Animated.View
+            entering={FadeIn.duration(200)}
+            exiting={FadeOut.duration(200)}
+            className="flex-1"
+          />
+        </Pressable>
+      )}
+
+      {/* FAB Options */}
+      {isExpanded && (
+        <View
+          className="absolute right-5"
+          style={{ bottom: 184, alignItems: 'flex-end' }}
+        >
+          {/* Guided Reflection Option */}
+          <Animated.View
+            entering={FadeInUp.delay(50).springify()}
+            className="mb-3"
+          >
+            <Pressable
+              onPress={handleGuidedReflection}
+              className="flex-row items-center"
+            >
+              <View
+                className="rounded-full px-4 py-2 mr-3"
+                style={{
+                  backgroundColor: colors.cream[100],
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 4,
+                  elevation: 3,
+                }}
+              >
+                <Text
+                  style={{
+                    fontFamily: 'Nunito_600SemiBold',
+                    color: colors.jackal[700],
+                  }}
+                >
+                  Guided Reflection
+                </Text>
+              </View>
+              <View
+                className="w-12 h-12 rounded-full items-center justify-center"
+                style={{
+                  backgroundColor: colors.sage[500],
+                  shadowColor: colors.sage[600],
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.25,
+                  shadowRadius: 4,
+                  elevation: 4,
+                }}
+              >
+                <Sparkles size={22} color="#FFFFFF" />
+              </View>
+            </Pressable>
+          </Animated.View>
+
+          {/* Quick Note Option */}
+          <Animated.View entering={FadeInUp.delay(0).springify()}>
+            <Pressable
+              onPress={handleQuickNote}
+              className="flex-row items-center"
+            >
+              <View
+                className="rounded-full px-4 py-2 mr-3"
+                style={{
+                  backgroundColor: colors.cream[100],
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 4,
+                  elevation: 3,
+                }}
+              >
+                <Text
+                  style={{
+                    fontFamily: 'Nunito_600SemiBold',
+                    color: colors.jackal[700],
+                  }}
+                >
+                  Quick Note
+                </Text>
+              </View>
+              <View
+                className="w-12 h-12 rounded-full items-center justify-center"
+                style={{
+                  backgroundColor: colors.coral[500],
+                  shadowColor: colors.coral[600],
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.25,
+                  shadowRadius: 4,
+                  elevation: 4,
+                }}
+              >
+                <PenLine size={22} color="#FFFFFF" />
+              </View>
+            </Pressable>
+          </Animated.View>
+        </View>
+      )}
+
+      {/* Main FAB Button */}
+      <View className="absolute right-5" style={{ bottom: 110 }}>
+        <Pressable onPress={toggleExpand}>
+          <LinearGradient
+            colors={isExpanded ? [colors.jackal[400], colors.jackal[500]] : [colors.sage[400], colors.sage[500]]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{
+              width: 60,
+              height: 60,
+              borderRadius: 30,
+              alignItems: 'center',
+              justifyContent: 'center',
+              shadowColor: isExpanded ? colors.jackal[600] : colors.sage[600],
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 8,
+              elevation: 6,
+            }}
+          >
+            <Animated.View style={fabIconStyle}>
+              <Plus size={28} color="#FFFFFF" strokeWidth={2.5} />
+            </Animated.View>
+          </LinearGradient>
+        </Pressable>
+      </View>
+    </>
+  );
+}
+
 export default function JournalScreen() {
   const router = useRouter();
   const journalEntries = useAppStore(s => s.journalEntries);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+
+  // Extract dates of all journal entries for calendar display
+  const entryDates = useMemo(() => {
+    return journalEntries.map(entry => entry.createdAt);
+  }, [journalEntries]);
+
+  // Filter entries by selected date
+  const filteredEntries = useMemo(() => {
+    if (!selectedDate) return journalEntries;
+    return journalEntries.filter(entry =>
+      isSameDay(parseISO(entry.createdAt), selectedDate)
+    );
+  }, [journalEntries, selectedDate]);
 
   const handleNewEntry = () => {
+    router.push('/journal-entry');
+  };
+
+  const handleQuickNote = () => {
+    // Quick note goes directly to free-write template
+    router.push({ pathname: '/journal-entry', params: { template: 'free-write' } });
+  };
+
+  const handleGuidedReflection = () => {
+    // Guided reflection shows template selection
     router.push('/journal-entry');
   };
 
@@ -255,10 +466,10 @@ export default function JournalScreen() {
         <ScrollView
           className="flex-1"
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 100 }}
+          contentContainerStyle={{ paddingBottom: 120 }}
         >
           {/* Header */}
-          <View className="flex-row items-center justify-between px-5 pt-4 pb-4">
+          <View className="flex-row items-center justify-between px-5 pt-4 pb-2">
             <Animated.View entering={FadeIn.delay(50)}>
               <Text
                 className="text-2xl"
@@ -279,68 +490,105 @@ export default function JournalScreen() {
                 {journalEntries.length} {journalEntries.length === 1 ? 'entry' : 'entries'}
               </Text>
             </Animated.View>
-
-            <AnimatedPressable
-              onPress={handleNewEntry}
-              entering={FadeIn.delay(100)}
-            >
-              <LinearGradient
-                colors={[colors.sage[400], colors.sage[500]]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                className="flex-row items-center py-2.5 px-4 rounded-full"
-              >
-                <Plus size={18} color="#FFFFFF" />
-                <Text
-                  className="text-sm ml-1"
-                  style={{
-                    fontFamily: 'Nunito_600SemiBold',
-                    color: '#FFFFFF',
-                  }}
-                >
-                  New
-                </Text>
-              </LinearGradient>
-            </AnimatedPressable>
           </View>
 
-          {/* Tip card */}
-          <Animated.View
-            entering={FadeInDown.delay(100).springify()}
-            className="mx-5 mb-4"
-          >
-            <View
-              className="rounded-2xl p-4 flex-row items-center gap-3"
-              style={{ backgroundColor: colors.coral[50] }}
+          {/* Calendar Strip */}
+          <CalendarStrip
+            entryDates={entryDates}
+            selectedDate={selectedDate}
+            onSelectDate={setSelectedDate}
+          />
+
+          {/* Filter indicator */}
+          {selectedDate && (
+            <Animated.View
+              entering={FadeIn}
+              className="mx-5 mb-3"
             >
-              <Heart size={20} color={colors.coral[500]} />
-              <Text
-                className="flex-1 text-sm"
-                style={{
-                  fontFamily: 'Nunito_500Medium',
-                  color: colors.coral[600],
-                }}
+              <View className="flex-row items-center justify-between">
+                <Text
+                  className="text-sm"
+                  style={{
+                    fontFamily: 'Nunito_600SemiBold',
+                    color: colors.primary[600],
+                  }}
+                >
+                  Showing entries for {format(selectedDate, 'MMM d, yyyy')}
+                </Text>
+                <Pressable onPress={() => setSelectedDate(null)}>
+                  <Text
+                    className="text-sm"
+                    style={{
+                      fontFamily: 'Nunito_600SemiBold',
+                      color: colors.coral[500],
+                    }}
+                  >
+                    Clear
+                  </Text>
+                </Pressable>
+              </View>
+            </Animated.View>
+          )}
+
+          {/* Tip card - only show when not filtering */}
+          {!selectedDate && (
+            <Animated.View
+              entering={FadeInDown.delay(100).springify()}
+              className="mx-5 mb-4"
+            >
+              <View
+                className="rounded-2xl p-4 flex-row items-center gap-3"
+                style={{ backgroundColor: colors.coral[50] }}
               >
-                Writing helps transform jackal thoughts into giraffe understanding.
-              </Text>
-            </View>
-          </Animated.View>
+                <Heart size={20} color={colors.coral[500]} />
+                <Text
+                  className="flex-1 text-sm"
+                  style={{
+                    fontFamily: 'Nunito_500Medium',
+                    color: colors.coral[600],
+                  }}
+                >
+                  Writing helps transform jackal thoughts into giraffe understanding.
+                </Text>
+              </View>
+            </Animated.View>
+          )}
 
           {/* Entries list */}
           <View className="px-5">
-            {journalEntries.map((entry, index) => (
-              <Animated.View
-                key={entry.id}
-                entering={FadeInDown.delay(150 + index * 50).springify()}
-              >
-                <JournalCard
-                  entry={entry}
-                  onPress={() => handleViewEntry(entry)}
-                />
-              </Animated.View>
-            ))}
+            {filteredEntries.length === 0 && selectedDate ? (
+              <View className="items-center py-8">
+                <Text
+                  className="text-sm"
+                  style={{
+                    fontFamily: 'Nunito_500Medium',
+                    color: colors.jackal[400],
+                  }}
+                >
+                  No entries on this day
+                </Text>
+              </View>
+            ) : (
+              filteredEntries.map((entry, index) => (
+                <Animated.View
+                  key={entry.id}
+                  entering={FadeInDown.delay(150 + index * 50).springify()}
+                >
+                  <JournalCard
+                    entry={entry}
+                    onPress={() => handleViewEntry(entry)}
+                  />
+                </Animated.View>
+              ))
+            )}
           </View>
         </ScrollView>
+
+        {/* Floating Action Button */}
+        <JournalFAB
+          onQuickNote={handleQuickNote}
+          onGuidedReflection={handleGuidedReflection}
+        />
       </SafeAreaView>
     </View>
   );

@@ -67,17 +67,20 @@ const STEPS_ORDER: Step[] = ['template', 'situation', 'observation', 'feelings',
 
 export default function JournalEntryScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ id?: string }>();
+  const params = useLocalSearchParams<{ id?: string; template?: JournalTemplate }>();
   const insets = useSafeAreaInsets();
   const isEditing = !!params.id;
+  const preselectedTemplate = params.template as JournalTemplate | undefined;
 
   const journalEntries = useAppStore(s => s.journalEntries);
   const addJournalEntry = useAppStore(s => s.addJournalEntry);
   const updateJournalEntry = useAppStore(s => s.updateJournalEntry);
   const deleteJournalEntry = useAppStore(s => s.deleteJournalEntry);
 
-  const [currentStep, setCurrentStep] = useState<Step>('template');
-  const [template, setTemplate] = useState<JournalTemplate>('free-write');
+  // If template is preselected (from Quick Note), skip template selection step
+  const initialStep: Step = preselectedTemplate ? 'situation' : 'template';
+  const [currentStep, setCurrentStep] = useState<Step>(initialStep);
+  const [template, setTemplate] = useState<JournalTemplate>(preselectedTemplate || 'free-write');
   const [situation, setSituation] = useState('');
   const [observation, setObservation] = useState('');
   const [selectedFeelings, setSelectedFeelings] = useState<string[]>([]);
@@ -103,7 +106,9 @@ export default function JournalEntryScreen() {
   }, [params.id, journalEntries]);
 
   const currentStepIndex = STEPS_ORDER.indexOf(currentStep);
-  const isFirstStep = currentStepIndex === 0;
+  // If template was preselected, the effective first step is 'situation' (index 1)
+  const effectiveFirstStepIndex = preselectedTemplate ? 1 : 0;
+  const isFirstStep = currentStepIndex <= effectiveFirstStepIndex;
   const isLastStep = currentStepIndex === STEPS_ORDER.length - 1;
 
   const handleNext = () => {
@@ -115,7 +120,7 @@ export default function JournalEntryScreen() {
   };
 
   const handleBack = () => {
-    if (!isFirstStep) {
+    if (currentStepIndex > effectiveFirstStepIndex) {
       setCurrentStep(STEPS_ORDER[currentStepIndex - 1]);
     }
   };
@@ -318,17 +323,17 @@ export default function JournalEntryScreen() {
             />
 
             <View
-              className="rounded-xl p-3 mt-4"
-              style={{ backgroundColor: colors.primary[50] }}
+              className="rounded-xl p-4 mt-4"
+              style={{ backgroundColor: colors.sage[50], borderWidth: 1, borderColor: colors.sage[200] }}
             >
               <Text
-                className="text-xs"
+                className="text-sm leading-5"
                 style={{
-                  fontFamily: 'Nunito_500Medium',
-                  color: colors.primary[600],
+                  fontFamily: 'Nunito_600SemiBold',
+                  color: colors.sage[700],
                 }}
               >
-                Tip: Replace "You always..." with specific times. Replace "You're being..." with what was said or done.
+                💡 Tip: Replace "You always..." with specific times. Replace "You're being..." with what was said or done.
               </Text>
             </View>
           </View>
@@ -503,7 +508,11 @@ export default function JournalEntryScreen() {
                       style={{
                         backgroundColor: selectedNeeds.includes(need)
                           ? colors.primary[500]
-                          : colors.primary[100],
+                          : '#FFFFFF',
+                        borderWidth: 1,
+                        borderColor: selectedNeeds.includes(need)
+                          ? colors.primary[500]
+                          : colors.cream[300],
                       }}
                     >
                       <Text
@@ -512,7 +521,7 @@ export default function JournalEntryScreen() {
                           fontFamily: 'Nunito_600SemiBold',
                           color: selectedNeeds.includes(need)
                             ? '#FFFFFF'
-                            : colors.primary[600],
+                            : colors.jackal[600],
                         }}
                       >
                         {need}
@@ -564,17 +573,17 @@ export default function JournalEntryScreen() {
             />
 
             <View
-              className="rounded-xl p-3 mt-4"
-              style={{ backgroundColor: colors.sage[50] }}
+              className="rounded-xl p-4 mt-4"
+              style={{ backgroundColor: colors.sage[50], borderWidth: 1, borderColor: colors.sage[200] }}
             >
               <Text
-                className="text-xs"
+                className="text-sm leading-5"
                 style={{
-                  fontFamily: 'Nunito_500Medium',
-                  color: colors.sage[600],
+                  fontFamily: 'Nunito_600SemiBold',
+                  color: colors.sage[700],
                 }}
               >
-                Tip: Good requests are specific, doable, and leave room for "no". They focus on what you want, not what you don't want.
+                💡 Tip: Good requests are specific, doable, and leave room for "no". They focus on what you want, not what you don't want.
               </Text>
             </View>
           </View>
@@ -665,20 +674,23 @@ export default function JournalEntryScreen() {
 
           {/* Progress dots */}
           <View className="flex-row gap-1.5">
-            {STEPS_ORDER.map((step, index) => (
-              <View
-                key={step}
-                className="w-2 h-2 rounded-full"
-                style={{
-                  backgroundColor:
-                    index === currentStepIndex
-                      ? colors.sage[500]
-                      : index < currentStepIndex
-                      ? colors.sage[300]
-                      : colors.cream[300],
-                }}
-              />
-            ))}
+            {STEPS_ORDER.filter((step) => !(preselectedTemplate && step === 'template')).map((step, index) => {
+              const actualIndex = STEPS_ORDER.indexOf(step);
+              return (
+                <View
+                  key={step}
+                  className="w-2 h-2 rounded-full"
+                  style={{
+                    backgroundColor:
+                      actualIndex === currentStepIndex
+                        ? colors.sage[500]
+                        : actualIndex < currentStepIndex
+                        ? colors.sage[300]
+                        : colors.cream[300],
+                  }}
+                />
+              );
+            })}
           </View>
 
           {isEditing ? (

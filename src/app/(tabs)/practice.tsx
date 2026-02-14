@@ -239,7 +239,12 @@ function StartPracticeButton({ onPress }: { onPress: () => void }) {
 export default function PracticeTabScreen() {
   const router = useRouter();
   const todayExercises = useAppStore(s => s.todayExercisesCompleted);
+  const completedExercisesCount = useAppStore(s => s.user?.completedExercises ?? 0);
   const { isPremium } = usePremium();
+
+  // Free exercise limit
+  const FREE_EXERCISE_LIMIT = 40;
+  const hasHitFreeLimit = !isPremium && completedExercisesCount >= FREE_EXERCISE_LIMIT;
 
   const categories = [
     {
@@ -248,7 +253,7 @@ export default function PracticeTabScreen() {
       icon: Eye,
       iconColor: colors.primary[500],
       category: 'observations' as NVCCategory,
-      exerciseCount: 3,
+      exerciseCount: 15,
       isPremium: false,
     },
     {
@@ -257,7 +262,7 @@ export default function PracticeTabScreen() {
       icon: Heart,
       iconColor: colors.coral[500],
       category: 'feelings' as NVCCategory,
-      exerciseCount: 5,
+      exerciseCount: 21,
       isPremium: false,
     },
     {
@@ -266,7 +271,7 @@ export default function PracticeTabScreen() {
       icon: Compass,
       iconColor: colors.sage[500],
       category: 'needs' as NVCCategory,
-      exerciseCount: 4,
+      exerciseCount: 11,
       isPremium: true,
     },
     {
@@ -275,7 +280,7 @@ export default function PracticeTabScreen() {
       icon: MessageSquare,
       iconColor: colors.primary[600],
       category: 'requests' as NVCCategory,
-      exerciseCount: 1,
+      exerciseCount: 7,
       isPremium: true,
     },
     {
@@ -284,16 +289,28 @@ export default function PracticeTabScreen() {
       icon: Shuffle,
       iconColor: colors.jackal[500],
       category: 'integration' as NVCCategory,
-      exerciseCount: 7,
+      exerciseCount: 46,
       isPremium: true,
     },
   ];
 
   const handleStartPractice = () => {
+    if (hasHitFreeLimit) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      router.push('/paywall');
+      return;
+    }
     router.push('/practice-session');
   };
 
   const handleCategoryPress = (category: NVCCategory, categoryIsPremium: boolean) => {
+    // Check free exercise limit first
+    if (hasHitFreeLimit) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      router.push('/paywall');
+      return;
+    }
+    // Then check if specific category requires premium
     if (categoryIsPremium && !isPremium) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       router.push('/paywall');
