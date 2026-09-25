@@ -10,7 +10,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.vibecode.giraffespace.3zxdgq",
-      "buildNumber": "15",
+      "buildNumber": "16",
       "infoPlist": {
         "UIBackgroundModes": [
           "remote-notification"
