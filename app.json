@@ -10,7 +10,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.vibecode.giraffespace.3zxdgq",
-      "buildNumber": "16",
+      "buildNumber": "17",
       "infoPlist": {
         "UIBackgroundModes": [
           "remote-notification"
@@ -21,7 +21,8 @@
       "edgeToEdgeEnabled": true
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "./plugins/withFmtCxx17"
     ],
     "experiments": {
       "typedRoutes": true
