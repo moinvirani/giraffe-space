@@ -35,9 +35,9 @@ Branch: `migrate/off-vibecode` (not merged to `main` yet).
    11th message shows the upgrade prompt, sandbox purchase → unlimited, password reset
    email opens the app, delete account.
 3. **Merge** `migrate/off-vibecode` into `main` once it passes.
-4. After cancelling Vibecode: rotate the Supabase **service role** key (Vibecode's env had
-   it as `EXPO_PUBLIC_SUPABASE_SERVICE_ROLE_KEY`; never compiled into the app, but Vibecode
-   held it), and revoke the old Gigi OpenAI key if it was yours.
+4. After cancelling Vibecode: rotate the Supabase **service role** key (Vibecode's app env held
+   it as an `EXPO_PUBLIC_SUPABASE_SERVICE…` variable; the code never read it, so it was never
+   compiled into the app, but Vibecode had it), and revoke the old Gigi OpenAI key if it was yours.
 5. Check which key `REVENUECAT_SECRET_KEY` holds: RevenueCat → Giraffe Space → API keys
    listed no secret keys. A key from another RevenueCat project makes everyone "free".
    Function logs show `RevenueCat lookup failed: <status>` if the key is rejected.
