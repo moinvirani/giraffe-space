@@ -23,9 +23,11 @@ Branch: `migrate/off-vibecode` (not merged to `main` yet).
 - **delete-user** source is now in the repo and also deletes the user's `user_profiles` row.
 - Vibecode SDK + its RN/expo-asset patches removed; plain metro config.
 - Link scheme `vibecode://` → `giraffespace://` (both allowed in Supabase Auth redirect URLs).
-- Version 1.1.1 (16). 1.1.0 (14) is the live App Store version. Build 15 was rejected by
-  App Store Connect (90725: built with the iOS 18.5 SDK; iOS 26 SDK required), so
-  production builds now use EAS image `latest` (Xcode 26).
+- Version 1.1.1 (17). 1.1.0 (14) is the live App Store version. Build 15 was rejected by
+  App Store Connect (90725: iOS 18.5 SDK; iOS 26 SDK now required), so production builds use
+  EAS image `latest` (Xcode 26). Build 16 then failed to compile: Xcode 26.4 rejects the
+  fmt library RN 0.79 vendors. `plugins/withFmtCxx17.js` compiles only the fmt pod as C++17
+  (remove it on Expo SDK 56+). Build 17 compiled with both fixes.
 
 ## Still to do (owner)
 1. **Run the migration** in Supabase SQL editor (Giraffe project):
@@ -33,7 +35,7 @@ Branch: `migrate/off-vibecode` (not merged to `main` yet).
    — copy it with: `pbcopy < ~/"Moin Startups/giraffe-space/supabase/migrations/20260925120000_gigi_usage_and_profile_rls.sql"`
    Until this runs, Gigi answers with the offline fallback for free users (the usage
    counter table doesn't exist yet) and `user_profiles` stays world-writable.
-2. **Test build 16 on TestFlight**: sign up, Gigi reply, "N left" counter goes down,
+2. **Test build 17 on TestFlight**: sign up, Gigi reply, "N left" counter goes down,
    11th message shows the upgrade prompt, sandbox purchase → unlimited, password reset
    email opens the app, delete account.
 3. **Merge** `migrate/off-vibecode` into `main` once it passes.
