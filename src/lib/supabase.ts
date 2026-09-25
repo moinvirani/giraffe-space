@@ -261,8 +261,8 @@ export async function refreshSession(): Promise<Session | null> {
 
 export async function resetPassword(email: string): Promise<void> {
   // Use the app's registered URL scheme for deep linking
-  // The scheme "vibecode" is registered in app.json
-  const redirectTo = 'vibecode://reset-password';
+  // The scheme "giraffespace" is registered in app.json
+  const redirectTo = 'giraffespace://reset-password';
 
   await supabaseRequest('/auth/v1/recover', {
     method: 'POST',

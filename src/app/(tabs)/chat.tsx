@@ -29,11 +29,13 @@ import { Trash2, Sparkles, ArrowUp, Crown } from 'lucide-react-native';
 import { useAppStore } from '@/lib/store';
 import { colors } from '@/lib/colors';
 import { ChatMessage } from '@/lib/types';
-import { sendMessageToGigi } from '@/lib/openai';
+import { sendMessageToGigi, getGigiStatus } from '@/lib/openai';
 import { usePremium } from '@/lib/usePremium';
 
-// Free users get 10 messages per day
+// Free users get 10 messages per day (enforced by the gigi-chat Edge Function)
 const FREE_MESSAGE_LIMIT = 10;
+
+const utcDay = () => new Date().toISOString().slice(0, 10);
 
 const GIGI_INTRO = `Hey there, I'm Gigi 🦒
 
@@ -192,6 +194,9 @@ export default function ChatScreen() {
 
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  // Last count reported by the server, and the UTC day the free limit was hit.
+  const [remainingToday, setRemainingToday] = useState<number | null>(null);
+  const [limitDay, setLimitDay] = useState<string | null>(null);
   const scrollViewRef = useRef<ScrollView>(null);
   const inputRef = useRef<TextInput>(null);
 
@@ -225,10 +230,19 @@ export default function ChatScreen() {
     };
   });
 
-  // Count user messages for free limit
-  const userMessageCount = chatMessages.filter(m => m.role === 'user').length;
-  const hasReachedLimit = !isPremium && userMessageCount >= FREE_MESSAGE_LIMIT;
-  const remainingMessages = Math.max(0, FREE_MESSAGE_LIMIT - userMessageCount);
+  // The server enforces the limit; this mirrors its last answer so the UI can
+  // show the upgrade prompt. It unlocks by itself when the UTC day rolls over.
+  const hasReachedLimit = !isPremium && limitDay === utcDay();
+  const remainingMessages = remainingToday ?? FREE_MESSAGE_LIMIT;
+
+  useEffect(() => {
+    if (isPremium) return;
+    getGigiStatus().then(status => {
+      if (!status || status.premium || status.remaining === null) return;
+      setRemainingToday(status.remaining);
+      if (status.remaining === 0) setLimitDay(utcDay());
+    });
+  }, [isPremium]);
 
   const quickPrompts = [
     "I'm so annoyed because...",
@@ -270,13 +284,26 @@ export default function ChatScreen() {
       }));
 
       // Get AI response with user context (provide defaults if user is null)
-      const response = await sendMessageToGigi(
+      const result = await sendMessageToGigi(
         messagesForAPI,
         userMessage,
         user?.profile ?? undefined,
         user?.name ?? 'friend'
       );
-      addChatMessage({ role: 'assistant', content: response });
+      if (result.kind === 'limit') {
+        setRemainingToday(0);
+        setLimitDay(utcDay());
+        addChatMessage({
+          role: 'assistant',
+          content: `You've used your ${result.limit} free messages with me for today. Upgrade to Premium for unlimited chats, or come back tomorrow 🦒`,
+        });
+      } else {
+        addChatMessage({ role: 'assistant', content: result.text });
+        if (result.remaining !== null) {
+          setRemainingToday(result.remaining);
+          if (result.remaining === 0) setLimitDay(utcDay());
+        }
+      }
     } catch (error) {
       console.error('Error getting response:', error);
       addChatMessage({

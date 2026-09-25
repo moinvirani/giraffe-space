@@ -23,6 +23,8 @@ import {
   Quicksand_700Bold,
 } from '@expo-google-fonts/quicksand';
 import { useAppStore } from '@/lib/store';
+import { getSession } from '@/lib/supabase';
+import { setUserId } from '@/lib/revenuecatClient';
 import { colors } from '@/lib/colors';
 
 export const unstable_settings = {
@@ -144,7 +146,7 @@ function RootLayoutNav({ colorScheme }: { colorScheme: 'light' | 'dark' | null |
 // Parse tokens from a deep link URL (Supabase puts them in the fragment)
 function parseDeepLinkTokens(url: string): { access_token?: string; refresh_token?: string; type?: string } | null {
   try {
-    // Supabase appends tokens as fragment: vibecode://reset-password#access_token=...&refresh_token=...
+    // Supabase appends tokens as fragment: giraffespace://reset-password#access_token=...&refresh_token=...
     const hashIndex = url.indexOf('#');
     if (hashIndex === -1) return null;
 
@@ -255,6 +257,10 @@ export default function RootLayout() {
     async function prepare() {
       try {
         await loadPersistedState();
+        // Users signed in before this build never identified to RevenueCat.
+        getSession().then(session => {
+          if (session?.user?.id) setUserId(session.user.id);
+        });
       } catch (e) {
         console.warn(e);
       } finally {

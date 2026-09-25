@@ -11,6 +11,7 @@ import { colors } from '@/lib/colors';
 import { User, Mail, ArrowRight, Lock, Eye, EyeOff, CheckCircle2, MailCheck, ExternalLink } from 'lucide-react-native';
 import { PrimaryButton } from '@/components/Button';
 import { signUpWithEmail, signInWithEmail, resetPassword } from '@/lib/supabase';
+import { setUserId } from '@/lib/revenuecatClient';
 
 // Key to track if user has ever signed up
 const HAS_SIGNED_UP_KEY = '@giraffe_has_signed_up';
@@ -112,7 +113,10 @@ export default function AuthScreen() {
 
     try {
       if (mode === 'signup') {
-        const { session } = await signUpWithEmail(email.trim(), password, name.trim());
+        const { session, user: newUser } = await signUpWithEmail(email.trim(), password, name.trim());
+        // Tie purchases to the Supabase user so gigi-chat can see premium server-side.
+        const newUserId = session?.user?.id ?? newUser?.id;
+        if (newUserId) setUserId(newUserId);
 
         // With email verification disabled, we always get a session back
         if (session) {
@@ -131,6 +135,7 @@ export default function AuthScreen() {
       } else {
         const { user: supabaseUser } = await signInWithEmail(email.trim(), password);
         if (supabaseUser) {
+          setUserId(supabaseUser.id);
           await markAsSignedUp(); // Also mark on successful sign in
           const userName = supabaseUser.user_metadata?.name || email.split('@')[0];
           await login(userName, email.trim(), 'adult');

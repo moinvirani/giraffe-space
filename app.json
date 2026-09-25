@@ -2,15 +2,15 @@
   "expo": {
     "name": "Giraffe Space",
     "slug": "giraffe-space",
-    "scheme": "vibecode",
-    "version": "1.1.0",
+    "scheme": "giraffespace",
+    "version": "1.1.1",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.vibecode.giraffespace.3zxdgq",
-      "buildNumber": "12",
+      "buildNumber": "15",
       "infoPlist": {
         "UIBackgroundModes": [
           "remote-notification"
@@ -26,6 +26,13 @@
     "experiments": {
       "typedRoutes": true
     },
-    "icon": "./icon.png"
+    "icon": "./icon.png",
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "9177a12b-5ead-45da-9d49-80c6ae8cb2b8"
+      }
+    },
+    "owner": "mvirani"
   }
 }

@@ -21,20 +21,17 @@
 </typescript>
 
 <environment>
-  You are in Vibecode. The system manages git and the dev server (port 8081).
-  DO NOT: manage git, touch the dev server, or check its state.
-  The user views the app through Vibecode App.
-  The user cannot see the code or interact with the terminal. Do not tell the user to do anything with the code or terminal.
-  You can see logs in the expo.log file.
-  The Vibecode App has tabs like ENV tab, API tab, LOGS tab. You can ask the user to use these tabs to view the logs, add enviroment variables, or give instructions for APIs like OpenAI, Nanobanana, Grok, Elevenlabs, etc. but first try to implement the functionality yourself.
-  The user is likely non-technical, communicate with them in an easy to understand manner.
-  If the user's request is vague or ambitious, scope down to specific functionality. Do everything for them.
-  For images, use URLs from unsplash.com. You can also tell the user they can use the IMAGES tab to generate and uplooad images.
+  Plain Expo project (no Vibecode). Install with bun; run with `bun start`.
+  Server code lives in Supabase project gpltetbdcvryosqcyrgz:
+    supabase/functions/gigi-chat   — Gigi chat (OpenAI key, prompt, free daily limit)
+    supabase/functions/delete-user — account deletion
+    supabase/migrations/           — SQL, applied by hand in the Supabase SQL editor
+  Secrets (OPENAI_API_KEY, REVENUECAT_SECRET_KEY) are Supabase function secrets, never EXPO_PUBLIC_*.
 </environment>
 
 
 <forbidden_files>
-  Do not edit: patches/, babel.config.js, metro.config.js, app.json, tsconfig.json, nativewind-env.d.ts
+  Do not edit without a reason: babel.config.js, metro.config.js, tsconfig.json, nativewind-env.d.ts
 </forbidden_files>
 
 <routing>
@@ -141,8 +138,8 @@
 </mistakes>
 
 <appstore>
-  Cannot assist with App Store or Google Play submission processes (app.json, eas.json, EAS CLI commands).
-  For submission help, click "Share" on the top right corner on the Vibecode App and select "Submit to App Store".
+  Build and submit with EAS (Expo account mvirani): `eas build -p ios --profile production`, then `eas submit -p ios --latest`.
+  Bump expo.ios.buildNumber in app.json for every upload, and expo.version once a version is released.
 </appstore> 
 
 <skills>
