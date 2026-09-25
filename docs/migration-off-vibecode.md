@@ -35,7 +35,10 @@ Branch: `migrate/off-vibecode` (not merged to `main` yet).
    — copy it with: `pbcopy < ~/"Moin Startups/giraffe-space/supabase/migrations/20260925120000_gigi_usage_and_profile_rls.sql"`
    Until this runs, Gigi answers with the offline fallback for free users (the usage
    counter table doesn't exist yet) and `user_profiles` stays world-writable.
-2. **Test build 17 on TestFlight**: sign up, Gigi reply, "N left" counter goes down,
+2. **Test build 17 on TestFlight** — first answer Export Compliance in App Store Connect →
+   TestFlight → build 17 → Manage (status shows "Missing Compliance"). If the app only uses
+   standard HTTPS, adding `"config": {"usesNonExemptEncryption": false}` under `ios` in
+   app.json answers it for future builds. Then: sign up, Gigi reply, "N left" counter goes down,
    11th message shows the upgrade prompt, sandbox purchase → unlimited, password reset
    email opens the app, delete account.
 3. **Merge** `migrate/off-vibecode` into `main` once it passes.
