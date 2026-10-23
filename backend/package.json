@@ -21,7 +21,7 @@
     "@vibecodeapp/backend-sdk": "^1.0.1",
     "@vibecodeapp/cloud-studio": "^0.2.4",
     "@vibecodeapp/proxy": "^2.0.3",
-    "hono": "4.6.0",
+    "hono": "4.13.13",
     "pdf-parse": "^2.4.5",
     "pdfjs-dist": "^5.4.624",
     "zod": "4.1.11"
